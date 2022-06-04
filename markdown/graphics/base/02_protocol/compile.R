@@ -24,7 +24,8 @@ rmarkdown::render(
   output_format = "word_document",
   output_dir = "./03_incremental",
   output_file = wordFileName,
-  knit_root_dir = "."
+  knit_root_dir = ".",
+  intermediates_dir = "./03_incremental/temp/markdown/word"
 )
 
 rmarkdown::render(
@@ -32,5 +33,6 @@ rmarkdown::render(
   output_format = "html_document",
   output_dir = "./04_product",
   output_file = htmlFileName,
-  knit_root_dir = "."
+  knit_root_dir = ".",
+  intermediates_dir = "./03_incremental/temp/markdown/html"
 )
