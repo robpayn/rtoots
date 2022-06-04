@@ -37,7 +37,7 @@ sec2 <- sec2 + 1
 ```
 ### `r sec1`.`r sec2`. Writing graphs to postscript vector graphics
 
-A useful device directly renders graphics to a file in vectorized postscript format (e.g., Adobe PDF files), and works on both Mac and PC computing platforms (as well as many others). The ` pdf() ` function is used to open this graphics device. Key arguments to the ` pdf() ` function allow direct programmatic control over the basic size and default font point size for a given canvas. The following code generates a sample PDF file, if run in an R session with the working directory set to where the file should be written.
+A useful device directly renders graphics to a file in vectorized postscript format (e.g., Adobe PDF files), and works on both Mac and PC computing platforms (as well as many others). The ` pdf() ` function is used to open this graphics device. Key arguments to the ` pdf() ` function allow direct programmatic control over the basic size and default font point size for a given canvas. The following code generates a sample PDF file, if run in an R session with the working directory set to where the file should be written. You are encouraged to cut and paste this code into an R script, and experiment with running the script with different values for the arguments to confirm you understand the behaviors they control. Note that the script may not run properly if you have the resulting graphics file open in a PDF viewer, if your PDF viewer locks the file.
 
 ``` 
 # Shut down any existing devices
@@ -73,7 +73,7 @@ Description of functions and arguments being used for the first time:
     - ` height `: Height of the canvas where graphical elements can be added
         - ` 5 `: Height of the canvas will b 5 inches
     - ` pointsize `: The default point size of characters and symbols
-        - ` 12 `: Renderer will use a 12 point font for characters (12/72 = 1/6 of an inch) 
+        - ` 12 `: Renderer will use a 12 point font for characters (12/72 = 1/6 of an inch). You might note from the documentation of ` pdf() ` that 12 is the default value for this argument. Therefore, the same result would be obtained if this argument were removed from the function call.
 - ` plot() ` : A high level function for creating a new plot with a single line of code
     - ` x `: Numerical vector of values for the x coordinate of each data point graphed
         - ` c(...) `: A function returning a numerical vector with the x coordinates (see below)
@@ -467,3 +467,146 @@ sec2 <- sec2 + 1
 This dissection of `plot.default() ` clearly requires substantially more lines of code than the original example of a single call to ` plot() ` that generates exactly the same figure. The point here is not that you should avoid using ` plot() ` and subsequently ` plot.default() `, because it clearly provides substantial convenience for basic plotting. The point is that your ability to debug and be creative with graphing code will expand if you understand how functions like ` plot.default() ` construct a graph, such that you can take advantage of the power of altering the arguments for each component of the graph should it be necessary to do something ` plot.default() ` does not allow. Furthermore, understanding of these details allows for much more informed troubleshooting should high level functions like ` plot.default() ` produce something unexpected in a given application.
 
 
+``` {r echo = FALSE}
+sec1 <- sec1 + 1
+sec2 <- 0
+```
+## `r sec1`. Taking control of base R graphics
+
+A revisit of the code and result for the basic figure introduced earlier reveals that the ` plot() ` function must be making several assumptions about the desired format of the plot. 
+
+```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+
+# Plot points at coordinates 0, 0 and 1, 1
+plot(
+  x = c(0, 1),
+  xlab = "x",
+  y = c(0, 1),
+  ylab = "y"
+)
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+Note that many aesthetic or technical aspects of this plot did not have to be defined in values passed to arguments in the function used, including: the use of point symbols rather than lines; the shape and color of the points; the thickness of boxes and axes lines; and the location of the axes relative to the edges of the canvas (among many others). However, computers are generally not able to guess at what these aspects of plots should look like, so copious information about the default appearance of graphs must exist somewhere in the underlying R memory structures. The trick is to know where that information is stored or to understand the functions that allow it to be altered.
+
+A common place for default information defining an aspect of a figure is the definition of default values for an argument to a function. For example, the ` plot.default() `function (if using ` plot()` on vectors) accepts the optional argument ` type ` that controls the type of symbolism used for the data in the graph. The values that can be passed to ` type ` to control the symbolism are documented in the package containing the function and in this case can be accessed using the  ` help("plot.default") `. The potential values for arguments are usually provided in either the **Arguments** section or **Details** section of the function documentation. Any default value defined for a parameter is usually provided in the **Usage** or **Arguments** section. A quick and succint way to view the definition of a function's arguments is to use the ` args() ` function (e.g., ` args(plot.default) `).
+
+```{r}
+# Display the definition of arguments for the function plot.default
+args(name = plot.default)
+```
+
+Description of functions and arguments being used for the first time:
+
+- ` args() `: Returns the argument definitions for a function. Return type is a function with the argument definition but a NULL code block.
+    - ` name `: The name of the function for which the argument definition is retrieved
+        - ` plot.default `: Causes the function to return the argument definitions for the function ` plot.default() `
+
+Note that the argument ` type ` is followed by the assignment ` = "p" `, which designates that it will take on the value of the character string ` "p" ` if a value for that argument is not provided in a given call to the function. Any differing value provided for ` type ` in a call to the function will replace the default value and thus change the symbolism in the plot. For example, passing the value ` "o" ` to the argument ` type ` will result in an overlay of both points and lines.
+
+```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+
+# Plot points at coordinates 0, 0 and 1, 1
+plot(
+  x = c(0, 1),
+  xlab = "x",
+  y = c(0, 1),
+  ylab = "y",
+  type = "o"
+)
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+Extensive information used to plot graphical elements is also stored in a collection of default values for common graphical parameters associated with the open device. The current default values for these graphical parameters can be accessed by passing the names of those parameters as arguments to the ` par() ` function. For example, the graphics parameter that determines the symbols used for data points is ` pch `, so the current value of "pch" can viewed with...
+
+```{r}
+# Display the value of the graphical parameter pch for the current graphics device
+par("pch")
+```
+
+Description of functions and arguments being used for the first time:
+
+- ` par() `: Returns the argument definitions for a function. Return type is a function with the argument definition but a NULL code block.
+    - ` ... `: The ellipses in the definition of arguments to a function indicate that the function will accept any number of generic arguments when called. "Generic" means that the function will either interpret the comma-delimited generic collection of elements without explicit definition of argument names, or it means that any generic arguments provided will be passed generically to other functions called when the function's code is executed. Use of ellipses in graphical functions is a very common practice for passing values for graphical parameters generically from higher level functions to lower level functions.
+        - ` "pch" `: Passing the character string "pch" generically to ` par() ` results in a return value of the current default value of the correspondingly named graphical parameter associated with the current graphics device. Note that multiple parameter names can be provided in a comma delimited list of character strings, which will return a named list of values with each element providing the current default value for each graphical parameter provided. For example ` par("pch", "lty") ` will return the current default values for the point type and line type graphical parameters.
+
+By default, ` pch ` typically has a value of 1, which specifies an open circle, hence the symbols plotted in the graphs so far have all been open circles. The par function can also be used to change the values of graphical parameters based on a collection of ` <parameter> = <value> `  in the argument to the function call. Thus, the default symbol can be changed to an open triangle by changing the value of the graphics parameter ` pch ` to 2.
+
+```{r}
+# Change the value of the graphical parameter pch for the current graphics device
+par(pch = 2)
+
+# Display the value of the graphical parameter pch for the current graphics device
+par("pch")
+```
+
+Description of functions and arguments being used for the first time:
+
+- ` par() `: Returns the argument definitions for a function. Return type is a function with the argument definition but a NULL code block.
+    - ` ... `: The ellipses in the definition of arguments to a function indicate that the function will accept any number of generic arguments when called
+       - ` pch = 2 `: Passing a named value to the generic arguments in ` par() ` will result in the default value for the named graphical parameter to be changed to the provided value
+
+Changing the value of a graphical parameter with ` par() ` will change the default value within the open graphics device for all subsequent calls to graphical functions, until the device is closed or reset. If we add an additional plot to the basic graph, it will also use the new setting of the graphical parameter ` pch `.
+
+The effect of this change can be demonstrated by calling two different graphing functions that plot data points in sequence. The understanding gained from dissecting the ` plot() ` function provides one method for adding an additional plot to the same basic graph, putting points in the unused corners of the basic graph using the ` plot.xy() ` function.
+
+```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+
+# Change the value of the graphical parameter pch for the current graphics device
+par(pch = 2)
+
+# Plot points at coordinates 0, 0 and 1, 1
+plot(
+  x = c(0, 1),
+  xlab = "x",
+  y = c(0, 1),
+  ylab = "y",
+  type = "o"
+)
+# Plot example data points
+plot.xy(
+  xy = xy.coords(
+    x = c(0, 1),
+    y = c(1, 0)
+  ),
+  type = "p"
+)
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+All the data points are open triangles, demonstrating how changing the ` pch ` graphical parameter with ` par() ` altered the value for all subsequent calls to graphics functions within the code chunk.
+
+The remainder of this section provides tutorials on adjusting the values passed to arguments of graphical functions or the default values of graphics parameters used by those functions, which together provide a great deal of explicit control over the scaling, formatting, and symbolism used in base R graphics.
+
+
+``` {r echo = FALSE}
+sec2 <- sec2 + 1
+```
+### `r sec1`.`r sec2`. Taking control of scaling
+
+
+``` {r echo = FALSE}
+sec2 <- sec2 + 1
+```
+### `r sec1`.`r sec2`. Taking control of axes
+
+
+``` {r echo = FALSE}
+sec2 <- sec2 + 1
+```
+### `r sec1`.`r sec2`. Taking control of plotting data
+
+
+``` {r echo = FALSE}
+sec2 <- sec2 + 1
+```
+### `r sec1`.`r sec2`. Taking control of labeling
