@@ -490,9 +490,9 @@ box(which = "outer")
 
 ```
 
-Note that many aesthetic or technical aspects of this plot did not have to be defined in values passed to arguments in the function used, including: the use of point symbols rather than lines; the shape and color of the points; the thickness of boxes and axes lines; and the location of the axes relative to the edges of the canvas (among many others). However, computers are generally not able to guess at what these aspects of plots should look like, so copious information about the default appearance of graphs must exist somewhere in the underlying R memory structures. The trick is to know where that information is stored or to understand the functions that allow it to be altered.
+Note that many aesthetic or technical aspects of this plot did not have to be defined in values passed to arguments in the function used, including: the use of point symbols rather than lines; the shape and color of the points; the thickness of boxes and axes lines; and the location of the axes relative to the edges of the canvas (among many others). However, computers are generally not able to guess at what these aspects of plots should look like, so copious information about the default appearance of graphs must exist somewhere in the underlying R data structures. The trick is to know where that information is stored or to understand the functions that allow it to be altered.
 
-A common place for default information defining an aspect of a figure is the definition of default values for an argument to a function. For example, the ` plot.default() `function (if using ` plot()` on vectors) accepts the optional argument ` type ` that controls the type of symbolism used for the data in the graph. The values that can be passed to ` type ` to control the symbolism are documented in the package containing the function and in this case can be accessed using the  ` help("plot.default") `. The potential values for arguments are usually provided in either the **Arguments** section or **Details** section of the function documentation. Any default value defined for a parameter is usually provided in the **Usage** or **Arguments** section. A quick and succint way to view the definition of a function's arguments is to use the ` args() ` function (e.g., ` args(plot.default) `).
+A common location for default graphical information is the definition of default values for the arguments to graphical functions. For example, the ` plot.default() `function (e.g., what is called if using ` plot() ` on vectors) accepts the optional argument ` type ` that controls the type of symbolism used for the data in the graph. The values that can be passed to ` type ` to control the symbolism are documented in the package containing the function and in this case can be accessed using the  ` help("plot.default") `. The potential values for arguments are usually described in either the **Arguments** section or **Details** section of the function documentation. Any default value defined for a parameter is usually described in the **Usage** or **Arguments** section. A quick and succinct way to view the definition of a function's arguments is to use the ` args() ` function (e.g., ` args(plot.default) `).
 
 ```{r}
 # Display the definition of arguments for the function plot.default
@@ -522,6 +522,12 @@ plot(
 box(which = "outer")
 
 ```
+
+Description of functions and arguments being used for the first time:
+
+- ` plot() ` : A high level function for creating a new plot with a single line of code
+    - ` type ` : A character string that defines the symbolism used when plotting data. For example, a value of "p" denotes points, "l" denotes lines, and "o" denotes an overlay of points and lines (among others).
+        - ` "o" `: Results in graphing data as an overlay of points and lines
 
 Extensive information used to plot graphical elements is also stored in a collection of default values for common graphical parameters associated with the open device. The current default values for these graphical parameters can be accessed by passing the names of those parameters as arguments to the ` par() ` function. For example, the graphics parameter that determines the symbols used for data points is ` pch `, so the current value of "pch" can viewed with...
 
@@ -583,9 +589,9 @@ box(which = "outer")
 
 ```
 
-All the data points are open triangles, demonstrating how changing the ` pch ` graphical parameter with ` par() ` altered the value for all subsequent calls to graphics functions within the code chunk.
+All the data points are open triangles, demonstrating how changing the ` pch ` graphical parameter with ` par() ` altered the value for all subsequent calls to graphics functions within the code chunk. Note that in Rmarkdown, each code chunk will open a separate graphics device, such that any changes to graphics parameters applied to the device in one code chunk will not propagate to other code chunks without further action.
 
-The remainder of this section provides tutorials on adjusting the values passed to arguments of graphical functions or the default values of graphics parameters used by those functions, which together provide a great deal of explicit control over the scaling, formatting, and symbolism used in base R graphics.
+The remainder of this section provides tutorials on adjusting the values passed to arguments of graphical functions or the default values of graphics parameters used by those functions, which together provide a great deal of explicit control over the scaling, formatting, symbolism, and labeling used in base R graphics.
 
 
 ``` {r echo = FALSE}
