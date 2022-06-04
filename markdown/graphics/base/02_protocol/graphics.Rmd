@@ -3,6 +3,8 @@ title: "A deeper dive into graphing in base R"
 output: html_document
 ---
 
+Compiled on `r format(Sys.time(), format = "%e %B %Y %H:%M")`.
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 sec1 = 0
