@@ -1,3 +1,5 @@
+library(rmarkdown)
+
 unique = FALSE
 
 wordFileName <- "graphics.docx"
@@ -19,16 +21,18 @@ if (unique) {
   )
 }
 
-rmarkdown::render(
+render(
   input = "./02_protocol/graphics.Rmd",
-  output_format = "word_document",
+  output_format = word_document(
+    reference_docx = "template.docx"
+  ),
   output_dir = "./03_incremental",
   output_file = wordFileName,
   knit_root_dir = ".",
   intermediates_dir = "./03_incremental/temp/markdown/word"
 )
 
-rmarkdown::render(
+render(
   input = "./02_protocol/graphics.Rmd",
   output_format = "html_document",
   output_dir = "./04_product",

@@ -1,6 +1,5 @@
 ---
 title: "A deeper dive into graphing in base R"
-output: html_document
 ---
 
 Compiled on `r format(Sys.time(), format = "%e %B %Y %H:%M")`.
@@ -39,7 +38,7 @@ sec2 <- sec2 + 1
 ```
 ### `r sec1`.`r sec2`. Writing graphs to postscript vector graphics
 
-A useful device directly renders graphics to a file in vectorized postscript format (e.g., Adobe PDF files), and works on both Mac and PC computing platforms (as well as many others). The ` pdf() ` function is used to open this graphics device. Key arguments to the ` pdf() ` function allow direct programmatic control over the basic size and default font point size for a given canvas. The following code generates a sample PDF file, if run in an R session with the working directory set to where the file should be written. You are encouraged to cut and paste this code into an R script, and experiment with running the script with different values for the arguments to confirm you understand the behaviors they control. Note that the script may not run properly if you have the resulting graphics file open in a PDF viewer, if your PDF viewer locks the file.
+A useful device directly renders graphics to a file in vectorized postscript format (e.g., Adobe PDF files), and works on both Mac and PC computing platforms (as well as many others). The ` pdf() ` function is used to open this graphics device. Key arguments to the ` pdf() ` function allow direct programmatic control over the basic size and default font point size for a given canvas. The following code generates a sample PDF file, if run in an R session with the working directory set to where the file should be written. You are encouraged to cut and paste this code into an R script, and experiment with running the script with different values for the arguments to confirm you understand the behaviors they control. Note that the script may not run properly if you have the resulting graphics file open in a PDF viewer, if your PDF viewer locks the file. SumatraPDF is a useful PDF viewer for development in Windows because it does not lock the file and automatically updates your view of the PDF file if it is rewritten by your R script.
 
 ``` 
 # Shut down any existing devices
@@ -190,14 +189,7 @@ plot(
 
 Description of functions and arguments being used for the first time:
 
-- ` windows() `: Opens a graphics device that writes to a pop-up window in the Windows operating system
-    - ` width `: Width of the canvas where graphical elements can be added
-        - ` 6 `: Width of the canvas will be 6 inches
-    - ` height `: Height of the canvas where graphical elements can be added
-        - ` 5 `: Height of the canvas will b 5 inches
-    - ` pointsize `: The default point size of characters and symbols
-        - ` 12 `: Renderer will use a 12 point font for characters (12/72 = 1/6 of an inch) 
-- ` quartz() `: Opens a graphics device that writes to a pop-up window in MacOS
+- ` windows() ` for a PC or ` quartz() ` for a Mac: Opens a graphics device that writes to a pop-up window in the Windows operating system
     - ` width `: Width of the canvas where graphical elements can be added
         - ` 6 `: Width of the canvas will be 6 inches
     - ` height `: Height of the canvas where graphical elements can be added
@@ -222,7 +214,7 @@ sec2 <- sec2 + 1
 ```
 ### `r sec1`.`r sec2`. Why is ` plot.default() ` called when I call ` plot() `?
 
- One way to explore the S3 abstraction for ` plot() ` is to look at the implementation of the function. For functions implemented with R code, the implementation of the function can be viewed by typing the function name at the console prompt, without parentheses.
+One way to explore the S3 abstraction for ` plot() ` is to look at the implementation of the function. For functions implemented with R code, the implementation of the function can be viewed by typing the function name at the console prompt, without parentheses.
 
 ``` {r}
 
