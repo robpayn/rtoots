@@ -465,7 +465,7 @@ This dissection of `plot.default() ` clearly requires substantially more lines o
 sec1 <- sec1 + 1
 sec2 <- 0
 ```
-## `r sec1`. Taking control of base R graphics
+## `r sec1`. Taking full control of base R graphics
 
 A revisit of the code and result for the basic figure introduced earlier reveals that the ` plot() ` function must be making several assumptions about the desired format of the plot. 
 
@@ -484,7 +484,7 @@ box(which = "outer")
 
 ```
 
-Note that many aesthetic or technical aspects of this plot did not have to be defined in values passed to arguments in the function used, including: the use of point symbols rather than lines; the shape and color of the points; the thickness of boxes and axes lines; and the location of the axes relative to the edges of the canvas (among many others). However, computers are generally not able to guess at what these aspects of plots should look like, so copious information about the default appearance of graphs must exist somewhere in the underlying R data structures. The trick is to know where that information is stored or to understand the functions that allow it to be altered.
+Note that many aesthetic or technical aspects of this plot did not have to be defined in the code, including (but not limited to): the use of point symbols rather than lines; the shape and color of the points; the thickness of boxes and axes lines; and the location of the axes relative to the edges of the canvas. However, computers are generally not able to guess at what these aspects of plots should look like, so default information about the aesthetic or technical appearance of graphs must exist somewhere in the underlying R data structures. An important trick to full control over figures is to understand where that information is stored, how it is used, and how to change it.
 
 A common location for default graphical information is the definition of default values for the arguments to graphical functions. For example, the ` plot.default() `function (e.g., what is called if using ` plot() ` on vectors) accepts the optional argument ` type ` that controls the type of symbolism used for the data in the graph. The values that can be passed to ` type ` to control the symbolism are documented in the package containing the function and in this case can be accessed using the  ` help("plot.default") `. The potential values for arguments are usually described in either the **Arguments** section or **Details** section of the function documentation. Any default value defined for a parameter is usually described in the **Usage** or **Arguments** section. A quick and succinct way to view the definition of a function's arguments is to use the ` args() ` function (e.g., ` args(plot.default) `).
 
@@ -635,17 +635,17 @@ The remainder of this section provides tutorials on adjusting the values passed 
 sec2 <- sec2 + 1
 sec3 <- 0
 ```
-### `r sec1`.`r sec2`. Taking control of scaling a single graph
+### `r sec1`.`r sec2`. Taking full control of scaling a single graph
 
-Scaling of the device canvas in base R is defined in the context of a rectangular *plot region*, where this region defines the area within which data are conventionally plotted (though the scale extends to the whole canvas and data can be plotted anywhere). The scaling function ` plot.window() ` establishes a coordinate system based on the margins between this region and the edge of the canvas, the limits of the x and y coordinates that define this region, and parameters that control buffering the limits of the coordinates from the edges of the graph. 
-
-Two sets of nested margins and a multi-panel configuration tool together define the overall margins for any given plot region from the edges of the canvas. Outer margins designed for controlling the white space between the edges of a multi-panel plot and the edges of the canvas. Inner margins control the white space between an individual plot region and the edges of its panel. Examples in this section will focus on a single graph, where the outer margins will be set to zero and the inner margins have sole control over the white space between the single plot region and the edges of the canvas. See ` help("par") ` and the documentation for graphical parameters ` oma ` / ` omi ` and ` mar ` / ` mai ` for visualizations of the margin structure.
+In base R, the scaling of the coordinate system for a device canvas is defined in the context of a rectangular subset of the canvas designated as a *plot region*. This region defines the area within which symbols representing data are conventionally rendered, though the scale extends across the entirety of the canvas and symbols can technically be plotted anywhere, if desired. The scaling function ` plot.window() ` is responsible for establishing the coordinate system to be used by later calls to graphics functions. Derivation of the coordinate system is based on the margins between the plot region and the edge of the canvas, the limits of the x and y coordinates that define the edges of the plot region, and parameters that control buffering of the symbols within the plot regions from the edges of the plot region. Therefore, taking full control of scaling requires understanding the graphical parameters and function arguments that control the behavior of ` plot.window() ` in performing these derivations.
 
 
 ``` {r echo = FALSE}
 sec3 <- sec3 + 1
 ```
-#### `r sec1`.`r sec2`.`r sec3` Inner margins
+#### `r sec1`.`r sec2`.`r sec3` Defining inner margins
+
+Two sets of nested margins and a multi-panel configuration tool together define the overall margins for any given plot region from the edges of the canvas. Outer margins designed for controlling the white space between the edges of a multi-panel plot and the edges of the canvas. Inner margins control the white space between an individual plot region and the edges of its panel. Examples in this section will focus on a single graph, where the outer margins will be set to zero and the inner margins have sole control over the white space between the single plot region and the edges of the canvas. See ` help("par") ` and the documentation for graphical parameters ` oma ` / ` omi ` and ` mar ` / ` mai ` for visualizations of the margin structure.
 
 Default graphics parameters are typically initially configured for single graphs (not multi-panel graphs), so the outer margins are typically set to zero by default. Depending on units used, the outer margins can be retreived or set with the graphical parameters ` oma ` or ` omi `.
 
@@ -659,7 +659,7 @@ Description of functions and arguments being used for the first time:
 - ` par() `: Allows the values of graphical parameters associated with the current open graphics device to be retrieved or altered.
     - ` "oma" ` or ` "omi" `: Returns the current setting for the graphical parameter defining the outer margins. The return value will be a vector with 4 elements designating the bottom, left, top, and right margins, in that order.
 
-Multi-panel plots will be covered in more detail later, so we will not experiment with outer margins here. Just note for now that the default values here are typically zero and thus have no effect on scaling. The space available between the plot region and the edge of the canvas will be defined entirely be the inner margins.
+Multi-panel plots will be covered in more detail later, so we will not experiment with outer margins here. Just note for now that the default values are typically zero and have no effect on scaling when set to zero. In this case, the space available between the plot region and the edge of the canvas will be defined entirely by graphics parameters controlling the inner margins.
 
 With outer margins defaulting to zero and working with a single graph, the scaling for the basic plots we have examined so far has been determined by the default values for the margins for individual plots within their panels.
 
@@ -688,7 +688,7 @@ box(which = "outer")
 
 ```
 
-The extra white space visible at the top and right of this basic plot is thus determined by the default values for the third and fourth elements of ` mar ` or ` mai `. Full control and consistency of the margins and subsequent scaling of the canvas can be gained by setting these graphical parameters explicitly with ` par() ` before using the graphical functions that reference them.
+The extra white space visible at the top and right of this basic plot is thus determined by the default values for the third and fourth elements of ` mar ` or ` mai `. Full control and consistency of the margins and subsequent scaling of the canvas can be gained by setting these graphical parameters explicitly with ` par() ` before using the graphical functions that reference them. For example, we can reduce the extra white space at the top and right sides of the graph by reducing the sizes of the margin defined in the third and fourth elements of ` mai `.
 
 ```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
 
@@ -735,13 +735,169 @@ box(which = "outer")
 
 ```
 
+Not that R graphics will not warn you that components of your graph are not visible because they are being plotted outside the limits of the device canvas.
+
+
+``` {r echo = FALSE}
+sec3 <- sec3 + 1
+```
+#### `r sec1`.`r sec2`.`r sec3` Defining the limits of the plot region
+
+Once margins are established, the derivation of the coordinate system for the canvas is subsequently controlled by the limits of the plot regions established by the ` xlim ` and ` ylim ` arguments to ` plot.window() `. Unless otherwise specified, the values of ` xlim ` and ` ylim ` will be determined by the associated minimum and maximum values in the vectors begin plotted. This default behavior will be overridden if explicit values for ` xlim ` and ` ylim ` are somehow passed to ` plot.window() ` when scaling the canvas. For example, passing ` xlim ` and ` ylim ` values to the generic ` plot() ` function will result in these values being passed to ` plot.window() ` via a call to ` plot.default() `.
+
+```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+
+# Define margins leaving room for axes on the bottom and left sides
+par(
+  omi = c(0, 0, 0, 0),
+  mai = c(0.9, 0.9, 0.2, 0.2)
+)
+
+# Plot points at coordinates 0, 0 and 1, 1
+plot(
+  x = c(0, 1),
+  xlim = c(-1, 2),
+  xlab = "x",
+  y = c(0, 1),
+  ylim = c(-1, 2),
+  ylab = "y"
+)
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+Description of functions and arguments being used for the first time:
+
+- ` plot() ` : A high level function for creating a new plot with a single line of code. This function is an S3 abstraction, which in this case results in a call to ` plot.default() `.
+    - ` xlim `: Numerical vector with 2 elements specifying the leftmost and rightmost values to be used in the graphing area of the coordinate system
+    - ` ylim `: Numerical vector with 2 elements specifying the bottommost and topmost values to be used in the graphing area of the coordinate system
+
+Or the effect of changing these arguments on scaling the canvas can be demonstrated by altering the call to ` plot.window() ` directly.
+
+```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+
+# Define margins leaving room for axes on the bottom and left sides
+par(
+  omi = c(0, 0, 0, 0),
+  mai = c(0.9, 0.9, 0.2, 0.2)
+)
+
+# Prepare the canvas for a new plot
+plot.new()
+
+# Scale the canvas 
+plot.window(
+  xlim = c(-1, 2),
+  ylim = c(-1, 2)
+)
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+# Plot example data points
+plot.xy(
+  xy = xy.coords(
+    x = c(0, 1),
+    y = c(0, 1)
+  ),
+  type = "p"
+)
+
+# Add an x axis
+Axis(
+  x = c(0, 1),
+  side = 1
+)
+
+# Add a y axis
+Axis(
+  x = c(0, 1),
+  side = 2
+)
+
+# Add a box around the area where data is plotted
+box()
+
+# Add axis labels
+title(
+  xlab = "x",
+  ylab = "y"
+)
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+Note that order of the magnitude of the limits in either the x or y direction is arbitrary. The example above follows the common convention that values increase in magnitude with movement upward in y space and that values increase in magnitude with movement to the right in x space. Reversing this convention in derived the coordinate system simply requires reversing the definition of the values of the limits associated with the bounds of the plot region. For example, the following will invert the y axis from previous examples by setting the y value associated with the bottom of the plot region to 1 and the y value associated with the top of the plot region to 0.
+
+```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+
+# Define margins leaving room for axes on the
+# bottom and left sides
+par(
+  omi = c(0, 0, 0, 0),
+  mai = c(0.9, 0.9, 0.2, 0.2)
+)
+
+# Plot points at coordinates 0, 0 and 1, 1
+plot(
+  x = c(0, 1),
+  xlab = "x",
+  y = c(0, 1),
+  ylim = c(1, 0),
+  ylab = "y"
+)
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+The numerical distribution used to represent the coordinate system for either axis can also be altered to a base-10 logarithmic scale. A logarithmic number system can be specified by a passing a value for the ` log ` argument generically to ` plot() ` or directly to ` plot.window() ` where the argument ultimately takes effect. The value for this argument can be the character string "x" or "y" to specify a log scale on only one of the axes, or the character string "xy" to specify a log scale on both axes. For example, the x scaling can be altered to be on a log scale with x coordinate values at 0.1 and 1 as follows (values of zero cannot be plotted in log space).
+
+```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+
+# Define margins leaving room for axes on the
+# bottom and left sides
+par(
+  omi = c(0, 0, 0, 0),
+  mai = c(0.9, 0.9, 0.2, 0.2)
+)
+
+# Plot points at coordinates 0, 0 and 1, 1
+plot(
+  x = c(0.1, 1),
+  xlab = "x",
+  y = c(0, 1),
+  ylab = "y",
+  log = "x"
+)
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+Description of functions and arguments being used for the first time:
+
+- ` plot() ` : A high level function for creating a new plot with a single line of code. This function is an S3 abstraction, which in this case results in a call to ` plot.default() `.
+    - ` log `: A character string specifying which axes should be in log space. The value "x" or "y" specifies one of the axes is in log space, and the value of "xy" specifies that both axes are in log space. Note that this argument is passed to ` plot() ` generically, and its effect on scaling is not realized until ` plot.default() ` ultimately passes the value assigned to ` log ` on to ` plot.window() `.
+        - ` "x" `: Specifies that the x axis should be scaled in log space
+
 
 ``` {r echo = FALSE}
 sec3 <- sec3 + 1
 ```
 #### `r sec1`.`r sec2`.`r sec3` Buffers within the plot region
 
-The scaling that determines the coordinates associated with the edges of the plot region is controlled by the combination of the ` xlim ` and ` ylim ` arguments to ` plot.window() ` and the style of each axis. Unless otherwise specified, the xlim and ylim will be determined by the associated minimum and maximum values in the vectors begin plotted. In the basic plot, note that there is extra space between the edges of the plot region and the minima of 0 and the maxima of 1. This space is created because the default value for each axis type designates a surrounding buffer of 4% of the difference between the maxima and minima designated for each axis.
+In the basic plot used as a frequent example, note the extra internal space between the edges of the plot region and the minima of 0 and the maxima of 1 defining the default limits of the plot region. 
+
+
+
+This default buffering (which is derived from 4% of the difference between the maximum and minimum of the limits) influenced the overall scaling of the canvas and is controlled by the axis type. The axis types are configurable with the ` xaxs ` and ` yaxs ` graphics parameters.
 
 ```{r}
 # Retrieve the values of the xaxs and yaxs 
@@ -877,81 +1033,6 @@ box(which = "outer")
 
 While locating the symbols representing data outside the plot region is not typical, this exercise illustrates the effect of the ` xpd ` graphical parameter or argument, which is useful in common labeling tasks like placing legends outside the axes of plots.
 
-
-``` {r echo = FALSE}
-sec3 <- sec3 + 1
-```
-#### `r sec1`.`r sec2`.`r sec3` Inverted and log scales
-
-An inverted or logarithmic number system for coordinates does not affect the basic considerations of scaling a canvas.  
-
-An inverted scale on a given axis arises from switching the order of the limits on the plot region. The value for the limits of the plot region are given from the bottom to the top for the y axis and from the left to the right for the y axis. For example, the following will invert the y axis from the previous example by setting the y value associated with the bottom of the plot region to 1 and the y value associated with the top of the plot region to 0.
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Define margins leaving room for axes on the
-# bottom and left sides
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.2)
-)
-
-# Plot points at coordinates 0, 0 and 1, 1
-plot(
-  x = c(0, 1),
-  xlab = "x",
-  xaxs = "i",
-  y = c(0, 1),
-  ylim = c(1, 0),
-  ylab = "y",
-  yaxs = "i",
-  xpd = TRUE
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` plot() ` : A high level function for creating a new plot with a single line of code. This function is an S3 abstraction, which in this case results in a call to ` plot.default() `.
-    - ` ylim `: The limits of the values defining the plot region on the y axis. Note that this argument is passed to ` plot() ` generically, and its effect on scaling is not realized until ` plot.default() ` ultimately passes the value assigned to ` ylim ` on to ` plot.window() `.
-        - ` c(1, 0) `: Results in the bottom edge of the plot region being defined by a y value of 1 and the top edge of the plot region being defined by a y value of 0.
-
-The use of a log scale alters the distribution of the number system used for either or both of the axes. A logarithmic number system can be specified by a passing a generic ` log ` argument to ` plot() `, which is ultimately meaningfully passed on to the ` plot.window() ` function. The values for this argument can be "x" or "y" to specify a log scale on one of the axes, or "xy" to specify a log scale on both. For example, the x scaling can be altered to be on a log scale with x coordinate values at 0.1 and 1 (values of zero cannot be plotted in log space).
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Define margins leaving room for axes on the
-# bottom and left sides
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.2)
-)
-
-# Plot points at coordinates 0, 0 and 1, 1
-plot(
-  x = c(0.1, 1),
-  xlab = "x",
-  xaxs = "i",
-  y = c(0, 1),
-  ylab = "y",
-  yaxs = "i",
-  xpd = TRUE,
-  log = "x"
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` plot() ` : A high level function for creating a new plot with a single line of code. This function is an S3 abstraction, which in this case results in a call to ` plot.default() `.
-    - ` log `: A character string specifying which axes should be in log space. The value "x" or "y" specifies one of the axes is in log space, and the value of "xy" specifies that both axes are in log space. Note that this argument is passed to ` plot() ` generically, and its effect on scaling is not realized until ` plot.default() ` ultimately passes the value assigned to ` log ` on to ` plot.window() `.
-        - ` "x" `: Specifies that the x axis should be scaled in log space
 
 ``` {r echo = FALSE}
 sec3 <- sec3 + 1
