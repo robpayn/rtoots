@@ -223,6 +223,7 @@ Placing graphics on the canvas at a desired locations first requires definition 
 plot.new()
 localWindow(xlim, ylim, log, asp, ...)
 ```
+
 Earlier in the function, ` localWindow() ` is established as a wrapper around the function ` plot.window() ` with the line
 
 ```
@@ -310,7 +311,7 @@ The result is two points on the graph, exactly as would be expected by two point
 
 ## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Creating the axes
 
-The ` Axis() ` function provides a tool for adding axes describing the scale of the canvas in the area where the data are being plotted. This function is highly configurable to make an axis with ticks and labels exactly where desired, but the default arguments will attempt to create ticks and labels that are reasonably legible. Here, the only arguments provided are the side of the graph where the axis should be located (1 is the bottom and 2 is the left) and the range of values representing the extremes of the ticks that should be provided on the axis (0 to 1 for both axes).
+The ` Axis() ` function provides a tool for adding axes describing the scale of the canvas in the area where the data are being plotted. This function is highly configurable to make an axis with ticks and labels exactly where desired, but the default arguments will attempt to create ticks and labels that are reasonably legible. Here, the only argument provided is the side of the graph where the axis should be located (1 is the bottom and 2 is the left).
 
 ```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
 
@@ -336,24 +337,16 @@ plot.xy(
 )
 
 # Add an x axis
-Axis(
-  x = c(0, 1),
-  side = 1
-)
+Axis(side = 1)
 
 # Add a y axis
-Axis(
-  x = c(0, 1),
-  side = 2
-)
+Axis(side = 2)
 
 ```
 
 Description of functions and arguments being used for the first time:
 
 - ` Axis() `: Renders the symbolism of an axis with labeled ticks
-    - ` x `: A numerical vector with 2 elements specifying the range of values on the axis from the lowest to highest tick. Note that use of "x" as the argument name in this case has nothing to do with the x axis of the figure. By convention, the first argument of many R functions is generically named "x", due to the nature of S3 classes and the potential for this argument to be of diverse types. The argument containing the extremes for the scaling is called x regardless of the axes to which the call to ` Axis() ` is being targeted, and the ` side ` argument (see below) designates the orientation with which an axis is created and applied.
-        - ` c(0, 1) `: Start ticks at 0 and end ticks at 1
     - ` side `: An integer specifying the side of the plotting area upon which to place the axis (1 = bottom, 2 = left, 3 = top, 4 = right)
         - ` 1 ` or ` 2 `: Call with 1 creates the x axis and call with 2 creates the y axis
 
@@ -388,16 +381,10 @@ plot.xy(
 )
 
 # Add an x axis
-Axis(
-  x = c(0, 1),
-  side = 1
-)
+Axis(side = 1)
 
 # Add a y axis
-Axis(
-  x = c(0, 1),
-  side = 2
-)
+Axis(side = 2)
 
 # Add a box around the area where data is plotted
 box()
@@ -757,16 +744,10 @@ plot.xy(
 )
 
 # Add an x axis
-Axis(
-  x = c(0, 1),
-  side = 1
-)
+Axis(side = 1)
 
 # Add a y axis
-Axis(
-  x = c(0, 1),
-  side = 2
-)
+Axis(side = 2)
 
 # Add a box around the area where data is plotted
 box()
@@ -1021,16 +1002,10 @@ plot.xy(
 )
 
 # Add an x axis
-Axis(
-  x = c(0.1, 1),
-  side = 1
-)
+Axis(side = 1)
 
 # Add a y axis
-Axis(
-  x = c(0, 1),
-  side = 2
-)
+Axis(side = 2)
 
 # Add a box around the area where data is plotted
 box()
@@ -1094,16 +1069,10 @@ plot.xy(
 )
 
 # Add an x axis
-Axis(
-  x = c(0.1, 1),
-  side = 1
-)
+Axis(side = 1)
 
 # Add a y axis
-Axis(
-  x = c(0, 1),
-  side = 2
-)
+Axis(side = 2)
 
 # Rescale the canvas for a secondary axis
 plot.window(
@@ -1125,10 +1094,7 @@ plot.xy(
 )
 
 # Add the secondary y axis on the right side
-Axis(
-  x = c(10, 20),
-  side = 4
-)
+Axis(side = 4)
 
 # Add a box around the area where data is plotted
 box()
