@@ -18,25 +18,18 @@ The reader should also be prepared to experiment with an open session in R (perh
 This tutorial focuses on graphics tools typically loaded by default in an R session, including the **grDevices** package and the **graphics** package. Not covered here are a family of tools based on the  **grid** graphics package that is an alternative implementation of the **graphics** package and thus provides an alternative interface to creating graphical objects. Popular higher level graphing tools that use **grid** include the **lattice** and **ggplot2** packages. A full understanding of **grid** with the conveniences of **lattice** or **ggplot2** are another way to take full control over the appearance of complex data visualizations.
 
 
-``` {r echo = FALSE}
-sec1 <- sec1 + 1
-sec2 <- 0
-```
-## `r sec1`. Graphics devices
+# `r sec1 <- sec1 + 1; sec2 <- 0; sec1`. Graphics devices
 
 Opening a graphics device creates a blank canvas upon which graphs will be rendered. The most common graphing tools in R (including base R, grid, and ggplot) all use the same canvas provided by a given graphics device. Therefore, if you understand the details of how to control the specific areas of the canvas that are used by a given graphing tool, you can combine or overlap the results of any or all of these tools on the same canvas.
 
-Graphics devices are designed to have a common interface for the functions used to add symbols to the graphs. Ideally, calling a given graphing function should create the same rendered visualization regardless of which device is in use. This feature provides the modularity that a given block of graphing code should create the same image regardless of using a device that puts it on the screen, writing it to an raster image file, or writing it to a vector graphics format. This degree of modularity is seldom fully realized. Particular devices may not have all the features necessary to render all aspects of a given graphing tool. For example, identical fonts or font sizes may not be available across all graphics devices, and transparency in colors will not render properly on all devices. You should expect differences between how different devices plot the same graph, so early consideration of the appropriate device that generates the proper format for the final product is encouraged.
+Graphics devices are designed to have a common interface for the functions used to add symbols to the graphs. Ideally, calling a given graphing function should create the same rendered visualization regardless of which device is in use. This feature provides the modularity that a given block of graphing code should create the same image regardless of using a device that renders it on the screen, renders it to a raster image file, or renders it to a vector graphics format. This degree of modularity is seldom fully realized. Particular devices may not have all the features necessary to render all aspects of a given graphing tool. For example, identical fonts or font sizes may not be available across all graphics devices, and transparency in colors will not render properly on all devices. You should expect differences between how different devices plot the same graph, so early consideration of the appropriate device that generates the proper format for the final product is encouraged.
 
 A default device (called the "null device") is likely automatically open in R, where the device used as default depends upon the platform you are using for development. In RStudio, the default device typically renders to the "Plots" tab, which is typically available in the bottom right panel. The device that renders to the "Plots" tab is convenient, but the size and aspect ratio of graphs rendered in this panel will change depending on how your RStudio window is configured. This lack of consistency in size and aspect ratio is problematic when refining figures or sharing code that generates figures, and use of an external device that allows consistency through programmatic control over the dimensions of the figure is suggested.
 
 The full array of available graphics devices cannot be demonstrated directly in an Rmarkdown file, because the compiler for R Markdown uses a specific device that embeds the resulting rendered graphics in the compiled document. However, a few examples of useful graphics devices are briefly outlined here, and experimentation with these devices is encouraged to understand the available options for figure development.
 
 
-``` {r echo = FALSE}
-sec2 <- sec2 + 1
-```
-### `r sec1`.`r sec2`. Writing graphs to postscript vector graphics
+## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Rendering graphs to postscript vector graphics
 
 A useful device directly renders graphics to a file in vectorized postscript format (e.g., Adobe PDF files), and works on both Mac and PC computing platforms (as well as many others). The ` pdf() ` function is used to open this graphics device. Key arguments to the ` pdf() ` function allow direct programmatic control over the basic size and default font point size for a given canvas. The following code generates a sample PDF file, if run in an R session with the working directory set to where the file should be written. You are encouraged to cut and paste this code into an R script, and experiment with running the script with different values for the arguments to confirm you understand the behaviors they control. Note that the script may not run properly if you have the resulting graphics file open in a PDF viewer, if your PDF viewer locks the file. SumatraPDF is a useful PDF viewer for development in Windows because it does not lock the file and automatically updates your view of the PDF file if it is rewritten by your R script.
 
@@ -89,10 +82,7 @@ Description of functions and arguments being used for the first time:
 - ` dev.off() `: Closes the most recently opened graphics device. For devices that write to a file (like ` pdf() `), this typically needs to be called for the file to be written to the disk and available to be opened by other applications.
 
 
-``` {r echo = FALSE}
-sec2 <- sec2 + 1
-```
-### `r sec1`.`r sec2`. Graphing in Rmarkdown
+## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Graphing in Rmarkdown
 
 When Rmarkdown is being compiled to an html file, the default graphics device used by code chunks embedded in the markdown is ` png() `. This device creates a lossless portable graphics format file that can be embedded in the html and later displayed by a web browser application when viewing the file. The graphics device is open by default, so code in an Rmarkdown chunk does not directly open the device. Chunk options can be changed to allow graphics device arguments to be altered from their default values. For example, the code chunk generated the test graph below sets new values for three chunk options that result in a customized canvas for the associated graphics device. Code chunk options are set by including a list of key-value pairs after the r in the curly brackets specifying the beginning of the chunk.
 
@@ -136,10 +126,7 @@ Description of functions and arguments being used for the first time:
 **Note to RStudio users:** The device used by RStudio to show graphics within the coding window is not the same device used to generate the compiled document. Be sure to view figures in the final compilation to be sure they have the desired characteristics, and do not assume the test figures in the coding window will necessarily match the final figure.
 
 
-``` {r echo = FALSE}
-sec2 <- sec2 + 1
-```
-### `r sec1`.`r sec2`. Other useful devices
+## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Other useful devices
 
 Other useful graphics devices will render to a new pop-up window on your computer. Because these windows are operating system dependent, a different device is needed for Windows or Mac computers. The ` windows() ` function will open a pop-up graphics device on a PC, and the ` quartz() ` function will open a pop-up graphics device on a Mac. Use the following code as a basis for experimentation. Note that you should not call ` dev.off() ` after opening these devices or the pop-up will close before you get a chance to look at it. Also note that ` graphics.off() ` will close any lingering devices, including previously opened pop-up windows. 
 
@@ -200,19 +187,12 @@ Description of functions and arguments being used for the first time:
 Finally, Windows users may want to experiment with the ` win.metafile() ` graphics device if you would like to render to the clipboard in a form that can be directly pasted into a Microsoft Word document or a Microsoft Powerpoint slide. Devices like ` bmp() `, ` jpeg() `, ` png() `, and ` tiff() ` are available to render graphics into various common raster image files. These files tend to take up more space (depending on image quality), but are also more reliably transferable across operating systems.
 
 
-``` {r echo = FALSE}
-sec1 <- sec1 + 1
-sec2 <- 0
-```
-## `r sec1`. Dissecting the ` plot() ` function
+# `r sec1 <- sec1 + 1; sec2 <- 0; sec1`. Dissecting the ` plot() ` function
 
 Taking full control over your figures requires a deeper understanding of what is happening when high-level functions like ` plot() ` are used. This understanding specifically requires knowing how S3 objects work in R, and why ` plot.default() ` is actually the function that gets called when you call ` plot() ` on a numeric vector. It also requires understanding how the device canvas is scaled and how individual graphical elements are added to the canvas by lower level graphing functions.
 
 
-``` {r echo = FALSE}
-sec2 <- sec2 + 1
-```
-### `r sec1`.`r sec2`. Why is ` plot.default() ` called when I call ` plot() `?
+## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Why is ` plot.default() ` called when I call ` plot() `?
 
 One way to explore the S3 abstraction for ` plot() ` is to look at the implementation of the function. For functions implemented with R code, the implementation of the function can be viewed by typing the function name at the console prompt, without parentheses.
 
@@ -235,10 +215,7 @@ plot.default
 For other examples of S3 functional abstractions, look at the implementation of the ` print() ` or ` summary() ` functions. See if you can find the specific implementations of these functions for particular data types that might be passed as the first argument to the abstraction (e.g., ` print.default() ` or ` print.data.frame() `) . While detailed knowledge of the benefits of these object oriented principles of polymorphism is not strictly necessary to use R, deeper understanding of this topic will allow for more informed troubleshooting when a function does something unexpected. If nothing else, deeper understanding of S3 abstractions will provide a pathway to finding more detailed ` help() ` documentation on the functions you are actually using when calling abstract methods.
 
 
-``` {r echo = FALSE}
-sec2 <- sec2 + 1
-```
-### `r sec1`.`r sec2`. Scaling the canvas
+## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Scaling the canvas
 
 Placing graphics on the canvas at a desired locations first requires definition of the scales for the axes of the canvas. Much of the first part of the ` plot.default() ` function is aliasing and bookkeeping that are a topic for different discussion. The lines of code that actually start to build the plot are
 
@@ -286,10 +263,7 @@ Description of functions and arguments being used for the first time:
 The results are not particularly exciting. The fact that we have established a coordinate system does not result in any graphical elements being added to the canvas. However, it has provided a spatially rectified blank slate, such that there is now a context for adding graphical elements exactly where desired.
 
 
-``` {r echo = FALSE}
-sec2 <- sec2 + 1
-```
-### `r sec1`.`r sec2`. Plotting the data
+## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Plotting the data
 
 Graphics objects can now be added to the canvas in layers. Lower layers will still be visible, unless opaque elements are added on top of them. The ` plot.default() ` function plots the data as the first visible element of the figure, using the function ` plot.xy() `. The first argument (` xy `) is expected to be a list of vectors characterizing the coordinates to be plotted. This list can be conveniently constructed using the ` xy.coords() ` function with arguments specifying the x and y coordinates for a number of points to be plotted. The points plotted here are at coordinates 0, 0 and 1, 1. Multiple arguments are available to adjust the symbolism of each data point, but symbols will be black open circles if those arguments are not specified.
 
@@ -334,10 +308,7 @@ Description of functions and arguments being used for the first time:
 The result is two points on the graph, exactly as would be expected by two points plotted within the domain defined in ` plot.window() `. However, without further reference for how the scaling of the canvas was completed, interpretation of these locations as 0, 0 and 1, 1 is impossible.
 
 
-``` {r echo = FALSE}
-sec2 <- sec2 + 1
-```
-### `r sec1`.`r sec2`. Creating the axes
+## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Creating the axes
 
 The ` Axis() ` function provides a tool for adding axes describing the scale of the canvas in the area where the data are being plotted. This function is highly configurable to make an axis with ticks and labels exactly where desired, but the default arguments will attempt to create ticks and labels that are reasonably legible. Here, the only arguments provided are the side of the graph where the axis should be located (1 is the bottom and 2 is the left) and the range of values representing the extremes of the ticks that should be provided on the axis (0 to 1 for both axes).
 
@@ -364,7 +335,6 @@ plot.xy(
   type = "p"
 )
 
-
 # Add an x axis
 Axis(
   x = c(0, 1),
@@ -390,10 +360,7 @@ Description of functions and arguments being used for the first time:
 The axes clearly label the scaling of the canvas in the area dictated by the arguments provided to the ` Axis() ` function. The consistency of the scaling established by ` plot.window() ` is evident in that the data points plotted earlier line up with the appropriate ticks on the axes. These are the fundamentals of building any graph on the canvas.
 
 
-``` {r echo = FALSE}
-sec2 <- sec2 + 1
-```
-### `r sec1`.`r sec2`. Labeling the axes
+## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Labeling the axes
 
 The ` title() ` function is a unified tool for labeling different parts of the graph. Most style guides for figures suggest that the area where data are plotted should be differentiated from the rest of the figure. The ` box() ` function can be used with no arguments to put a box around the area with plotted data. As with previous graphics tools, the location and symbolism used for the elements being added are highly configurable with additional arguments. However, the default arguments are used for now, and detail on arguments that are commonly altered from the defaults are discussed later.
 
@@ -419,7 +386,6 @@ plot.xy(
   ),
   type = "p"
 )
-
 
 # Add an x axis
 Axis(
@@ -453,19 +419,12 @@ Description of functions and arguments being used for the first time:
         - ` "y" `: Results in the y axis being labeled with a "y"
 
 
-``` {r echo = FALSE}
-sec2 <- sec2 + 1
-```
-### `r sec1`.`r sec2`. Summary
+## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Summary
 
 This dissection of `plot.default() ` clearly requires substantially more lines of code than the original example of a single call to ` plot() ` that generates exactly the same figure. The point here is not that you should avoid using ` plot() ` and subsequently ` plot.default() `, because it clearly provides substantial convenience for basic plotting. The point is that your ability to debug and be creative with graphing code will expand if you understand how functions like ` plot.default() ` construct a graph, such that you can take advantage of the power of altering the arguments for each component of the graph should it be necessary to do something ` plot.default() ` does not allow. Furthermore, understanding of these details allows for much more informed troubleshooting should high level functions like ` plot.default() ` produce something unexpected in a given application.
 
 
-``` {r echo = FALSE}
-sec1 <- sec1 + 1
-sec2 <- 0
-```
-## `r sec1`. Taking full control of base R graphics
+# `r sec1 <- sec1 + 1; sec2 <- 0; sec1`. Taking full control of base R graphics
 
 A revisit of the code and result for the basic figure introduced earlier reveals that the ` plot() ` function must be making several assumptions about the desired format of the plot. 
 
@@ -568,6 +527,7 @@ plot(
   ylab = "y",
   type = "o"
 )
+
 # Plot example data points
 plot.xy(
   xy = xy.coords(
@@ -605,6 +565,7 @@ plot(
   ylab = "y",
   type = "o"
 )
+
 # Plot example data points
 plot.xy(
   xy = xy.coords(
@@ -631,19 +592,12 @@ In this case, the value of the graphical parameter ` pch ` is ignored in place o
 The remainder of this section provides tutorials on adjusting the values passed to arguments of graphical functions or the default values of graphics parameters used by those functions, which together provide a great deal of explicit control over the scaling, formatting, symbolism, and labeling used in base R graphics. Throughout the remainder of this section, frequent reference to the base R documentation using ` help("par") ` or the help for lower level graphing functions is suggested to convince yourself you understand the consequences of changing the default value for each graphics parameter before calling graphical functions. As always, experimentation is also highly encouraged.
 
 
-``` {r echo = FALSE}
-sec2 <- sec2 + 1
-sec3 <- 0
-```
-### `r sec1`.`r sec2`. Taking full control of scaling a single graph
+## `r sec1`.`r sec2 <- sec2 + 1; sec3 <- 0; sec2`. Taking full control of scaling a single graph
 
 In base R, the scaling of the coordinate system for a device canvas is defined in the context of a rectangular subset of the canvas designated as a *plot region*. This region defines the area within which symbols representing data are conventionally rendered, though the scale extends across the entirety of the canvas and symbols can technically be plotted anywhere, if desired. The scaling function ` plot.window() ` is responsible for establishing the coordinate system to be used by later calls to graphics functions. Derivation of the coordinate system is based on the margins between the plot region and the edge of the canvas, the limits of the x and y coordinates that define the edges of the plot region, and parameters that control buffering of the symbols within the plot regions from the edges of the plot region. Therefore, taking full control of scaling requires understanding the graphical parameters and function arguments that control the behavior of ` plot.window() ` in performing these derivations.
 
 
-``` {r echo = FALSE}
-sec3 <- sec3 + 1
-```
-#### `r sec1`.`r sec2`.`r sec3` Defining inner margins
+### `r sec1`.`r sec2`.`r sec3 <- sec3 + 1; sec3` Defining inner margins
 
 Two sets of nested margins and a multi-panel configuration tool together define the overall margins for any given plot region from the edges of the canvas. Outer margins designed for controlling the white space between the edges of a multi-panel plot and the edges of the canvas. Inner margins control the white space between an individual plot region and the edges of its panel. Examples in this section will focus on a single graph, where the outer margins will be set to zero and the inner margins have sole control over the white space between the single plot region and the edges of the canvas. See ` help("par") ` and the documentation for graphical parameters ` oma ` / ` omi ` and ` mar ` / ` mai ` for visualizations of the margin structure.
 
@@ -738,10 +692,7 @@ box(which = "outer")
 Not that R graphics will not warn you that components of your graph are not visible because they are being plotted outside the limits of the device canvas.
 
 
-``` {r echo = FALSE}
-sec3 <- sec3 + 1
-```
-#### `r sec1`.`r sec2`.`r sec3` Defining the limits of the plot region
+### `r sec1`.`r sec2`.`r sec3 <- sec3 + 1; sec3` Defining the limits of the plot region
 
 Once margins are established, the derivation of the coordinate system for the canvas is subsequently controlled by the limits of the plot regions established by the ` xlim ` and ` ylim ` arguments to ` plot.window() `. Unless otherwise specified, the values of ` xlim ` and ` ylim ` will be determined by the associated minimum and maximum values in the vectors begin plotted. This default behavior will be overridden if explicit values for ` xlim ` and ` ylim ` are somehow passed to ` plot.window() ` when scaling the canvas. For example, passing ` xlim ` and ` ylim ` values to the generic ` plot() ` function will result in these values being passed to ` plot.window() ` via a call to ` plot.default() `.
 
@@ -888,10 +839,7 @@ Description of functions and arguments being used for the first time:
         - ` "x" `: Specifies that the x axis should be scaled in log space
 
 
-``` {r echo = FALSE}
-sec3 <- sec3 + 1
-```
-#### `r sec1`.`r sec2`.`r sec3` Buffers within the plot region
+### `r sec1`.`r sec2`.`r sec3 <- sec3 + 1; sec3` Buffers within the plot region
 
 In the basic plot used as a frequent example, note the extra internal space between the edges of the plot region and the minima of 0 and the maxima of 1 defining the default limits of the plot region. 
 
@@ -1034,10 +982,7 @@ box(which = "outer")
 While locating the symbols representing data outside the plot region is not typical, this exercise illustrates the effect of the ` xpd ` graphical parameter or argument, which is useful in common labeling tasks like placing legends outside the axes of plots.
 
 
-``` {r echo = FALSE}
-sec3 <- sec3 + 1
-```
-#### `r sec1`.`r sec2`.`r sec3` Summary
+### `r sec1`.`r sec2`.`r sec3 <- sec3 + 1; sec3` Summary
 
 So far, we have been able to gain complete control of scaling while continuing to use the high-level abstract function ` plot() `, which ultimately calls ` plot.default() ` and passes generic arguments on to lower level graphing functions, such as ` plot.window() ` and ` plot.xy() `. Understanding the behavior of these examples comes from recognizing that the resulting plot is being generated by the following sequence of calls to lower level graphical functions. For example, the graph with a logarithmic x axis, with altered margins, without buffers, and with visible symbols in the margins can be properly scaled and created with lower level functions as follows.
 
@@ -1204,19 +1149,10 @@ While the functions necessary to add appropriate axis labels and legends to this
 The graphics parameters and graphical function arguments that control margins, limits on the plot region, and axis types together give complete control over canvas scaling. The ` xpd ` graphical parameter or graphical function argument allows subsequent control over whether plot region symbols are visible when they are placed at coordinates that are in the margins outside the plot region. 
 
 
-``` {r echo = FALSE}
-sec2 <- sec2 + 1
-```
-### `r sec1`.`r sec2`. Taking control of axes
+## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Taking control of axes
 
 
-``` {r echo = FALSE}
-sec2 <- sec2 + 1
-```
-### `r sec1`.`r sec2`. Taking control of plotting data
+## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Taking control of plotting data
 
 
-``` {r echo = FALSE}
-sec2 <- sec2 + 1
-```
-### `r sec1`.`r sec2`. Taking control of labeling
+## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Taking control of labeling

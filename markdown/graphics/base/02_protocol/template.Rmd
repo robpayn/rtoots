@@ -1,0 +1,30 @@
+---
+title: Title
+---
+
+Compiled on `r format(Sys.time(), format = "%e %B %Y %H:%M")`.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Heading 1
+
+First Paragraph
+
+Body text
+
+- Unnumbered List 1
+    - Unnumbered List 2
+        - Unnumbered List 3
+
+1. Numbered list 1
+    1. Numbered list 1.1
+        1. Numbered List 1.1.1
+1. Numbered List 2
+
+## Heading 2
+
+### Heading 3
+
+#### Heading 4
