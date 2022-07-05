@@ -21,16 +21,16 @@ if (unique) {
   )
 }
 
-render(
-  input = "./02_protocol/graphics.Rmd",
-  output_format = word_document(
-    reference_docx = "template.docx"
-  ),
-  output_dir = "./03_incremental",
-  output_file = wordFileName,
-  knit_root_dir = ".",
-  intermediates_dir = "./03_incremental/temp/markdown/word"
-)
+# render(
+#   input = "./02_protocol/graphics.Rmd",
+#   output_format = word_document(
+#     reference_docx = "template.docx"
+#   ),
+#   output_dir = "./03_incremental",
+#   output_file = wordFileName,
+#   knit_root_dir = ".",
+#   intermediates_dir = "./03_incremental/temp/markdown/word"
+# )
 
 render(
   input = "./02_protocol/graphics.Rmd",

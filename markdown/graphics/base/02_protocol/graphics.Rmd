@@ -465,7 +465,7 @@ box(which = "outer")
 
 Description of functions and arguments being used for the first time:
 
-- ` plot() ` : A high level function for creating a new plot with a single line of code
+- ` plot() ` or ` plot.default() `: A high level function for creating a new plot with a single line of code
     - ` type ` : A character string that defines the symbolism used when plotting data. For example, a value of "p" denotes points, "l" denotes lines, and "o" denotes an overlay of points and lines (among others). Note that the argument ` type ` is passed to plot generically here and ultimately this argument is not used specifically until it is passed to the ` plot.xy() ` function by ` plot.default() `.
         - ` "o" `: Results in graphing data as an overlay of points and lines
 
@@ -708,7 +708,7 @@ box(which = "outer")
 
 Description of functions and arguments being used for the first time:
 
-- ` plot() ` : A high level function for creating a new plot with a single line of code. This function is an S3 abstraction, which in this case results in a call to ` plot.default() `.
+- ` plot() ` or ` plot.default() ` : A high level function for creating a new plot with a single line of code. The function ` plot() ` is an S3 abstraction, which in this case results in a call to ` plot.default() `.
     - ` xlim `: Numerical vector with 2 elements specifying the leftmost and rightmost values to be used in the graphing area of the coordinate system
     - ` ylim `: Numerical vector with 2 elements specifying the bottommost and topmost values to be used in the graphing area of the coordinate system
 
@@ -815,7 +815,7 @@ box(which = "outer")
 
 Description of functions and arguments being used for the first time:
 
-- ` plot() ` : A high level function for creating a new plot with a single line of code. This function is an S3 abstraction, which in this case results in a call to ` plot.default() `.
+- ` plot() ` or ` plot.default() `: A high level function for creating a new plot with a single line of code. The function ` plot() ` is an S3 abstraction, which in this case results in a call to ` plot.default() `.
     - ` log `: A character string specifying which axes should be in log space. The value "x" or "y" specifies one of the axes is in log space, and the value of "xy" specifies that both axes are in log space. Note that this argument is passed to ` plot() ` generically, and its effect on scaling is not realized until ` plot.default() ` ultimately passes the value assigned to ` log ` on to ` plot.window() `.
         - ` "x" `: Specifies that the x axis should be scaled in log space
 
@@ -1115,10 +1115,259 @@ While the functions necessary to add appropriate axis labels and legends to this
 The graphics parameters and graphical function arguments that control margins, limits on the plot region, and axis types together give complete control over canvas scaling. The ` xpd ` graphical parameter or graphical function argument allows subsequent control over whether plot region symbols are visible when they are placed at coordinates that are in the margins outside the plot region. 
 
 
-## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Taking control of axes
+## `r sec1`.`r sec2 <- sec2 + 1; sec3 <- 0; sec2`. Taking full control of numerical axes
+
+High level functions like ` plot.default() ` provide few features for direct control over formatting the axes. One strategy is to disable the axes when calling ` plot() `, then call ` Axis() ` directly to make use of all the features inaccessible via ` plot.default() `. Note that ` Axis() ` is an S3 abstraction, such that the function it actually calls depends on the arguments ` x ` and ` at ` passed to ` Axis `. When plotting axes based on numeric vectors, the function actually called is ` axis() `. Note that R is case-sensitive, so ` Axis() ` is technically a different function than ` axis() ` (though they sometimes have the same result).
+
+```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+
+# Define margins 
+par(
+  omi = c(0, 0, 0, 0),
+  mai = c(0.9, 0.9, 0.2, 0.2)
+)
+
+# Plot points at coordinates 0, 0 and 1, 1 without axes
+plot(
+  x = c(0, 1),
+  xlab = "x",
+  y = c(0, 1),
+  ylab = "y",
+  axes = FALSE
+)
+
+# Add an x axis
+axis(side = 1)
+
+# Add a y axis
+axis(side = 2)
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+Description of functions and arguments being used for the first time:
+
+- ` plot() ` or ` plot.default() `: A high level function for creating a new plot with a single line of code. The function ` plot() ` is an S3 abstraction, which in this case results in a call to ` plot.default() `.
+    - ` axes `: Logical value specifying if axes should be created
+        - ` FALSE `: Specifies that axes should not be drawn
+- ` axis() `: Renders the symbolism of an axis with labeled ticks
+    - ` side `: An integer specifying the side of the plot region upon which to place the axis (1 = bottom, 2 = left, 3 = top, 4 = right)
+        - ` 1 ` or ` 2 `: Call with 1 creates the x axis and call with 2 creates the y axis
+
+Notice that the ` axes = FALSE ` argument for ` plot() ` also results in the lack of a box drawn around the plot region. This feature is a consequence of the default value of the ` frame.plot ` argument being set to the same value as the ` axes ` argument (i.e., default value of ` frame.plot = axes ` specified in the arguments to ` plot.default() `.
+
+```{r}
+args(plot.default)
+```
+
+At this point, the convenience of using ` plot() ` may cause more confusion than it is worth. Perhaps customization at this level calls for more step-by-step code based on the dissection of ` plot.default() ` reviewed earlier.
+
+```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+
+# Define margins 
+par(
+  omi = c(0, 0, 0, 0),
+  mai = c(0.9, 0.9, 0.2, 0.2)
+)
+
+# Prepare the canvas and scale it
+plot.new()
+plot.window(
+  xlim = c(0, 1),
+  ylim = c(0, 1)
+)
+
+# Add an x axis
+axis(side = 1)
+
+# Add a y axis
+axis(side = 2)
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+The R base graphics package will often find an aesthetically pleasing style for the axes with default settings, but just a few arguments passed directly to the ` axis() ` function provide tremendous flexibility in formatting, including but not limited to: style and location of ticks and axis lines; style, location, and content of tick labels; and the location of axes relative to the plot region.
 
 
-## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Taking control of plotting data
+### `r sec1`.`r sec2`.`r sec3 <- sec3 + 1; sec3`. Customizing tick locations
+
+The ` axis() ` function allows ticks to be located anywhere along the axes by passing a numeric vector of tick locations to the ` at ` argument. Therefore, any function that returns a numeric vector can be used to provide tick locations. Because aesthetically pleasing ticks are often at regular intervals, the ` seq() ` function is a good candidate for defining tick locations. However, use of the ` c() ` function to manually define the location of each tick is also possible. Regardless of the method used to create the vector for tick locations, an axis line is rendered from the first to the last tick specified. Note these axis lines are redundant and only the ticks and tick labels are a visible consequence of calls to ` axis() ` if a box is drawn around the plot region. For now, a box will not be drawn around the plot region to clearly observe the behavior of the ` axis() ` function.
+
+```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+
+par(
+  omi = c(0, 0, 0, 0),
+  mai = c(0.9, 0.9, 0.2, 0.2)
+)
+
+plot.new()
+plot.window(
+  xlim = c(0, 1),
+  ylim = c(0, 1)
+)
+
+# Add an x axis with custom ticks
+axis(
+  side = 1,
+  at = seq(from = 0.1, to = 0.9, by = 0.2)
+)
+
+# Add a y axis with custom ticks
+axis(
+  side = 2,
+  at = c(0, 0.15, 0.4, 0.55, 0.85, 1)
+)
+
+box(which = "outer")
+
+```
+
+Description of functions and arguments being used for the first time:
+
+- ` axis() `: Renders the symbolism of an axis with labeled ticks
+    - ` at `: A numeric vector specifying the locations of ticks
+        - ` seq(from = 0.1, to = 0.9, by = 0.2) `: Generates a vector with a sequence of values at regular intervals for tick locations
+        - ` c(0, 0.15, 0.4, 0.55, 0.85, 1) `: Generates a vector with directly specified values for tick locations
+- ` seq() `: Creates a vector based on regular sequence of values
+    - ` from `: A value for the beginning of the sequence
+        - ` 0.1 `: Start the numerical sequence at 0.1
+    - ` to `: A value for the end of the sequence
+        - ` 0.9 `: End the numerical sequence at a value less than or equal to 0.9
+    - ` by `: The interval between elements of the sequence
+        - ` 0.2 `: Elements of the sequence should increment by 0.2
+
+The ` axis() ` function will attempt to label the ticks based on the value specifying the tick location, if the formatting of the labels allow the labels to fit without overlap. Ticks will still be rendered where the labels do not fit, but the label will not be rendered. For example, several ticks are added to the y axis below, where only the lower-valued tick is labeled because the higher-valued tick is too close to allow a label to be rendered without overlap. The number of times the ` axis() ` function is called has no restrictions. The function might be called to draw attention to particular values of interest in a figure. For example, a tick is added at the value of 0.42 on the x axis below, to draw attention to and quantify this particular value on the graph. 
+
+```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+
+par(
+  omi = c(0, 0, 0, 0),
+  mai = c(0.9, 0.9, 0.2, 0.2)
+)
+
+plot.new()
+plot.window(
+  xlim = c(0, 1),
+  ylim = c(0, 1)
+)
+
+# Add an x axis with custom ticks
+axis(
+  side = 1,
+  at = seq(from = 0.1, to = 0.9, by = 0.2)
+)
+axis(
+  side = 1,
+  at = 0.42
+)
+
+# Add a y axis with custom ticks
+axis(
+  side = 2,
+  at = c(-0.18, 0, 0.15, 0.38, 0.4, 0.55, 0.65, 0.85, 0.88, 1)
+)
+
+box(which = "outer")
+
+```
+
+The tick label for the x axis value at 0.42 fits based on the choice of the other tick labels. However, calling ` axis() ` (or any graphical rendering function) multiple times can create overlap of symbols. Adjusting the location of tick labels to avoid overlap will be a later topic. Finally, the value of -0.18 was added as a tick location on the y axis. This tick is not visible because cropping outside the plot region applies to axes as it does to symbols representing data. In the case of an axis, cropping only applies to the boundaries of the plot region defined along that axis. In this case, the tick label at -0.18 is being cropped by the edge of the plot region specified by the buffer from y = 0. Setting the `xpd` argument to ` TRUE ` for the call to ` axis() ` will allow the cropped tick and associated axis line outside the plot region to be visible. 
+
+```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+
+par(
+  omi = c(0, 0, 0, 0),
+  mai = c(0.9, 0.9, 0.2, 0.2)
+)
+
+plot.new()
+plot.window(
+  xlim = c(0, 1),
+  ylim = c(0, 1)
+)
+
+# Add an x axis with custom ticks
+axis(
+  side = 1,
+  at = seq(from = 0.1, to = 0.9, by = 0.2)
+)
+axis(
+  side = 1,
+  at = 0.42
+)
+
+# Add a y axis with custom ticks
+axis(
+  side = 2,
+  at = c(-0.18, 0, 0.15, 0.38, 0.4, 0.55, 0.65, 0.85, 0.88, 1),
+  xpd = TRUE
+)
+
+box(which = "outer")
+
+```
+
+Description of functions and arguments being used for the first time:
+
+- ` axis() `: Renders the symbolism of an axis with labeled ticks
+    - ` xpd `: A logical value indicating whether plot region symbolism located at canvas coordinates in the margins outside the plot region should be visible (` TRUE `) or clipped (` FALSE `)
+        - ` TRUE `: Results in the portions of the axis in the margins outside the plot region to be visible.
 
 
-## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Taking control of labeling
+### `r sec1`.`r sec2`.`r sec3 <- sec3 + 1; sec3`. Customizing tick labels
+
+
+### `r sec1`.`r sec2`.`r sec3 <- sec3 + 1; sec3`. Customizing axis locations
+
+```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+
+# Define margins 
+par(
+  omi = c(0, 0, 0, 0),
+  mai = c(0.9, 1.8, 0.2, 0.2)
+)
+
+# Prepare the canvas for a new plot
+plot.new()
+
+# Scale the canvas 
+plot.window(
+  xlim = c(0, 1),
+  ylim = c(0, 1)
+)
+
+# Add an x axis
+axis(
+  side = 1
+)
+
+# Add a y axis
+axis(
+  side = 2
+)
+
+plot.window(
+  xlim = c(0, 2),
+  ylim = c(0, 2)
+)
+
+# Add a y axis
+axis(
+  side = 2,
+  line = 4
+)
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+
+## `r sec1`.`r sec2 <- sec2 + 1; sec3 <- 0; sec2`. Taking control of plotting data
+
+
+## `r sec1`.`r sec2 <- sec2 + 1; sec3 <- 0; sec2`. Taking control of labeling
