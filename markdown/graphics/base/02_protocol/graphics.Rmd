@@ -1238,7 +1238,7 @@ Description of functions and arguments being used for the first time:
     - ` to `: A value for the end of the sequence
         - ` 0.9 `: End the numerical sequence at a value less than or equal to 0.9
     - ` by `: The interval between elements of the sequence
-        - ` 0.2 `: Elements of the sequence should increment by 0.2
+        - ` 0.2 `: Elements of the sequence should increment by 0.2 from the value at the beginning of the sequence
 
 The ` axis() ` function will attempt to label the ticks based on the value specifying the tick location, if the formatting of the labels allow the labels to fit without overlap. Ticks will still be rendered where the labels do not fit, but the label will not be rendered. For example, several ticks are added to the y axis below, where only the lower-valued tick is labeled because the higher-valued tick is too close to allow a label to be rendered without overlap. The number of times the ` axis() ` function is called has no restrictions. The function might be called to draw attention to particular values of interest in a figure. For example, a tick is added at the value of 0.42 on the x axis below, to draw attention to and quantify this particular value on the graph. 
 
@@ -1275,7 +1275,7 @@ box(which = "outer")
 
 ```
 
-The tick label for the x axis value at 0.42 fits based on the choice of the other tick labels. However, calling ` axis() ` (or any graphical rendering function) multiple times can create overlap of symbols. Adjusting the location of tick labels to avoid overlap will be a later topic. Finally, the value of -0.18 was added as a tick location on the y axis. This tick is not visible because cropping outside the plot region applies to axes as it does to symbols representing data. In the case of an axis, cropping only applies to the boundaries of the plot region defined along that axis. In this case, the tick label at -0.18 is being cropped by the edge of the plot region specified by the buffer from y = 0. Setting the `xpd` argument to ` TRUE ` for the call to ` axis() ` will allow the cropped tick and associated axis line outside the plot region to be visible. 
+The tick label for the x axis value at 0.42 fits on the axis based on the choice of the other tick labels. However, calling ` axis() ` (or any graphical rendering function) multiple times can create overlap of symbols, by design. Adjusting the location of tick labels to avoid overlap will be a later topic. Finally, the value of -0.18 was added as a tick location on the y axis. This tick is not visible because cropping outside the plot region applies to axes as it does to symbols representing data. In the case of an axis, cropping only applies to the boundaries of the plot region defined along that axis. In this case, the tick label at -0.18 is being cropped by the edge of the plot region specified by the buffer from y = 0. Setting the `xpd` argument to ` TRUE ` for the call to ` axis() ` will allow the cropped tick and associated axis line outside the plot region to be visible. 
 
 ```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
 
@@ -1317,9 +1317,48 @@ Description of functions and arguments being used for the first time:
     - ` xpd `: A logical value indicating whether plot region symbolism located at canvas coordinates in the margins outside the plot region should be visible (` TRUE `) or clipped (` FALSE `)
         - ` TRUE `: Results in the portions of the axis in the margins outside the plot region to be visible.
 
+The function ` axis() ` only provides a tool for labeling the existing coordinate system on the canvas. The location of the plot region and scaling of the canvas are unaffected by calls to ` axis() `. Additional axes rendered on a different scale or plot region within the canvas would first require another call to ` plot.window() `.
+
 
 ### `r sec1`.`r sec2`.`r sec3 <- sec3 + 1; sec3`. Customizing tick labels
 
+The basic character of tick labels can be customized using arguments to the ` axis() ` function. Both the content and the location of ticks are adjustable from this function. Though only customizations with arguments to ` axis() ` are covered here, even more creativity with tick labels (e.g., partial rotation of text) is possible by suppressing the labeling of ticks by setting the ` labels ` argument to ` FALSE ` and labeling ticks manually using the ` text() ` function with the argument ` xpd ` set to ` TRUE `.
+
+If the locations of ticks are specified with the ` at ` argument, tick labels can also be defined explicitly with a vector of values passed to the ` labels ` argument. The length of the vectors for the ` at ` and ` labels ` arguments should be the same. As an example, values from 0 to 1 representing fractions of a whole might be visualized as the corresponding percentages by changing the tick labels. 
+
+```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+
+# Define margins 
+par(
+  omi = c(0, 0, 0, 0),
+  mai = c(0.9, 0.9, 0.2, 0.2)
+)
+
+# Prepare the canvas and scale it
+plot.new()
+plot.window(
+  xlim = c(0, 1),
+  ylim = c(0, 1)
+)
+
+# Add an x axis
+axis(
+  side = 1,
+  at = seq(from = 0, to = 1, by = 0.2),
+  labels = seq(from = 0, to = 100, by = 20)
+)
+
+# Add a y axis
+axis(
+  side = 2,
+  at = seq(from = 0, to = 1, by = 0.2),
+  labels = c("0", "20", "40", "60", "80", "100")
+)
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
 
 ### `r sec1`.`r sec2`.`r sec3 <- sec3 + 1; sec3`. Customizing axis locations
 
