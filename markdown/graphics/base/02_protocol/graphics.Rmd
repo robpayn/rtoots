@@ -716,7 +716,7 @@ Description of functions and arguments being used for the first time:
     - ` xlim `: Numerical vector with 2 elements specifying the leftmost and rightmost values to be used in the graphing area of the coordinate system
     - ` ylim `: Numerical vector with 2 elements specifying the bottommost and topmost values to be used in the graphing area of the coordinate system
 
-Or the effect of changing these arguments on scaling the canvas can be demonstrated by altering the call to ` plot.window() ` directly.
+The effect of changing these arguments on scaling the canvas can be demonstrated by altering the call to ` plot.window() ` directly.
 
 ```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
 
@@ -1036,7 +1036,7 @@ Description of functions and arguments being used for the first time:
     - ` xpd `: A logical value indicating whether plot region symbolism located at canvas coordinates in the margins outside the plot region should be visible (` TRUE `) or clipped (` FALSE `)
         - ` TRUE `: Results in the portions of the data symbols (circles) in the margins outside the plot region to be visible.
         
-Just these few scaling features and recognition that the same canvas can be rescaled over and over again shows the way forward to more creative techniques, such as adding data to the plot region on an secondary y axis. Starting with the previous example, we can alter margins to make room for the secondary axis on the right, rescale the canvas using ` plot.window() `, plot the data using ` plot.xy() `, and add the secondary axis to the right side of the plot region using ` Axis() `, without the need to learn any new functions or arguments.
+Just these few scaling features and recognition that the same canvas can be rescaled over and over again shows the way forward to more creative techniques, such as adding data to the plot region on a secondary y axis. Starting with the previous example, we can alter margins to make room for the secondary axis on the right, rescale the canvas using ` plot.window() `, plot the data using ` plot.xy() `, and add the secondary axis to the right side of the plot region using ` Axis() `, without the need to learn any new functions or arguments.
 
 ```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
 
@@ -1328,7 +1328,7 @@ The function ` axis() ` only provides a tool for labeling the existing coordinat
 
 The basic character of tick labels can be customized using arguments to the ` axis() ` function. Both the content and the location of ticks are adjustable from this function. Though only customizations with arguments to ` axis() ` are covered here, even more creativity with tick labels (e.g., partial rotation of text) is possible by suppressing the labeling of ticks by setting the ` labels ` argument to ` FALSE ` and labeling ticks manually using the ` text() ` function with the argument ` xpd ` set to ` TRUE `.
 
-If the locations of ticks are specified with the ` at ` argument, tick labels can also be defined explicitly with a vector of values passed to the ` labels ` argument. The length of the vectors for the ` at ` and ` labels ` arguments should be the same. As an example, values from 0 to 1 representing fractions of a whole might be visualized as the corresponding percentages by changing the tick labels. 
+If the locations of ticks are specified with the ` at ` argument, tick labels can also be defined explicitly with a vector of values passed to the ` labels ` argument. The length of the vectors for the ` at ` and ` labels ` arguments should be the same. As an example, values from 0 to 1 representing fractions of a whole might be visualized as the corresponding percentages by changing the tick labels without changing the original coordinate system based on fractions. 
 
 ```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
 
@@ -1371,7 +1371,7 @@ Description of functions and arguments being used for the first time:
         - ` seq(from = 0, to = 100, by = 20) `: Results in numeric tick labels corresponding to 0, 20, 40, 60, 80, and 100 percent
         - ` c("0%", "20%", "40%", "60%", "80%", "100%") `: Results in text tick labels corresponding to 0, 20, 40, 60, 80, and 100 percent, including the percent symbol
         
-The automation of tick label generation is thus only limited by the imagination of how numerical or character vectors can be generated. However, the tick labels can always be hard coded to the exact symbolism desired with an explicitly defined vector of character strings. As with many of the labeling functions in R graphics, vectors of R expressions can also be used if mathematical notation is needed (see ` help(plotmath) `). Examples of that practice are provided in later materials.
+The automation of tick label generation is thus only limited by the imagination of how numerical or character vectors can be generated. However, the tick labels can always be hard coded to the exact symbolism desired with an explicitly defined vector of character strings. As with many of the labeling functions in R graphics, vectors of R expressions can also be used if mathematical notation is needed (see ` help(plotmath) `). Examples of using ` plotmath ` features are provided in later materials.
 
 
 ### `r sec1`.`r sec2`.`r sec3 <- sec3 + 1; sec3`. Customizing axis locations
