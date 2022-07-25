@@ -189,7 +189,7 @@ Finally, Windows users may want to experiment with the ` win.metafile() ` graphi
 
 # `r sec1 <- sec1 + 1; sec2 <- 0; sec1`. Dissecting the ` plot() ` function
 
-Taking full control over your figures requires a deeper understanding of what is happening when high-level functions like ` plot() ` are used. This understanding specifically requires knowing how S3 objects work in R, and why ` plot.default() ` is actually the function that gets called when you call ` plot() ` on a numeric vector. It also requires understanding how the device canvas is scaled and how individual graphical elements are added to the canvas by lower level graphing functions.
+Taking full control over your figures requires a deeper understanding of what is happening when high-level functions like ` plot() ` are used. This understanding specifically requires knowing how S3 objects work in R, and why ` plot.default() ` is actually the function that gets called when you call ` plot() ` on a numeric vector. It also requires understanding how the device canvas is scaled and how individual graphical elements are added to the canvas by lower level graphing functions. The following steps through these functions in the same order they are called by ` plot.default() `.
 
 
 ## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Why is ` plot.default() ` called when I call ` plot() `?
@@ -232,7 +232,7 @@ localWindow <- function(..., col, bg, pch, cex, lty, lwd) plot.window(...)
 
 which means that calls to ` localWindow() ` are ultimately resulting in calls to ` plot.window() `. This pattern is applied to many graphical functions being used to simplify the large number of arguments that need to be passed explicitly to those functions, but understanding the details of this practice is not necessary at this time.
 
-The function ` plot.new() ` prepares the canvas for a new plot, and the function ` plot.window() ` scales the axes of the prepared canvas to establish the coordinate system for the canvas. The effect of these functions can be explored by calling them directly with simplified arguments, consistent with examples provided above. Here, a box is drawn around the outer edge to aid with visualization of the extent of the blank canvas. As above, the code chunk options are set to control the dimensions of the canvas being embedded in the compiled document, and all code chunks in the remainder of this section are configured the same way.
+The function ` plot.new() ` prepares the canvas for a new plot, and the function ` plot.window() ` scales the axes of the prepared canvas to establish the coordinate system for the canvas. Scaling of the canvas is based on vectors passed to ` xlim ` and ` ylim ` arguments that define the coordinates associated with the boundaries of a rectangular plot region on the canvas (i.e. the area of the canvas where data is intended to be plotted). The effect of these functions can be explored by calling them directly with simplified arguments, consistent with examples provided above. Here, a box is drawn around the plot region and the outer edge of the canvas to aid with visualization of the basis for the coordinate system, though symbolism is not yet provided for visualization of the coordinate system numerics (see later materials on the ` Axis() ` function). The size of the margins around the plot region are defined by default graphic parameters that will be discussed in detail, later (e.g., see later materials introducing ` par("mar") `). As above, the Rmarkdown code chunk options are set to control the dimensions of the canvas being embedded in the compiled document, and all code chunks in the remainder of this section are configured the same way.
 
 ```
  {r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
@@ -249,7 +249,8 @@ plot.window(
   ylim = c(0, 1)
 )
 
-# Draw a box around the outer edge of the canvas
+# Draw a box around the plot region and around the outer edge of the canvas
+box()
 box(which = "outer")
 
 ```
@@ -260,8 +261,10 @@ Description of functions and arguments being used for the first time:
 - ` plot.window() `: Scales the canvas, providing an orthogonal 2-dimensional coordinate system (x is horizontal and y is vertical) for locating graphical objects placed on the canvas by later calls to graphing functions.
     - ` xlim `: Numerical vector with 2 elements specifying the leftmost and rightmost values to be used in the graphing area of the coordinate system
     - ` ylim `: Numerical vector with 2 elements specifying the bottommost and topmost values to be used in the graphing area of the coordinate system
+- ` box() `: Draws a box around predefined regions of a graphing canvas
+    - No arguments implies the default ` which = "plot" `, which results in a box drawn around the plot region.
 
-The results are not particularly exciting. The fact that we have established a coordinate system does not result in any graphical elements being added to the canvas. However, it has provided a spatially rectified blank slate, such that there is now a context for adding graphical elements exactly where desired.
+The results are not particularly exciting. The fact that we have established a coordinate system does not result in any graphical elements being added to the canvas. The boxes aiding in visualization had to be added manually. However, this code has provided a spatially rectified blank slate, such that there is now a context for adding graphical elements at the exact coordinates desired.
 
 
 ## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Plotting the data
@@ -279,7 +282,8 @@ plot.window(
   ylim = c(0, 1)
 )
 
-# Draw a box around the outer edge of the canvas
+# Draw a box around the plot region and around the outer edge of the canvas
+box()
 box(which = "outer")
 
 # Plot example data points
@@ -306,12 +310,12 @@ Description of functions and arguments being used for the first time:
     - ` y `: Numerical vector of values for the y coordinate of each data point graphed
         - ` c(0, 1) `: Two data points with y coordinates of 0 and 1, respectively.
 
-The result is two points on the graph, exactly as would be expected by two points plotted within the domain defined in ` plot.window() `. However, without further reference for how the scaling of the canvas was completed, interpretation of these locations as 0, 0 and 1, 1 is impossible.
+The result is two points on the graph, exactly as would be expected by two points plotted within the domain defined in ` plot.window() `. The box around the plot region provides a hint of the layout of the coordinate system in relation to the plotted values at x = 0, y = 0 and x = 1, y = 1, but further numeric symbolism around the plot region is required to directly read values from the graph.
 
 
 ## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Creating the axes
 
-The ` Axis() ` function provides a tool for adding axes describing the scale of the canvas in the area where the data are being plotted. This function is highly configurable to make an axis with ticks and labels exactly where desired, but the default arguments will attempt to create ticks and labels that are reasonably legible. Here, the only argument provided is the side of the graph where the axis should be located (1 is the bottom and 2 is the left).
+The ` Axis() ` function provides a tool for adding axes describing the scale of the canvas in the area where the data are being plotted. This function is highly configurable to make an axis with ticks and labels exactly where desired, but the default arguments will attempt to create ticks and labels that are reasonably legible. Here, the only argument provided is the side of the graph where the axis should be located (1 is the bottom and 2 is the left). Note that the box around the plot region has been ommited to provide a clear view of the symbolism generated by the ` Axis() ` function.
 
 ```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
 
@@ -350,12 +354,12 @@ Description of functions and arguments being used for the first time:
     - ` side `: An integer specifying the side of the plotting area upon which to place the axis (1 = bottom, 2 = left, 3 = top, 4 = right)
         - ` 1 ` or ` 2 `: Call with 1 creates the x axis and call with 2 creates the y axis
 
-The axes clearly label the scaling of the canvas in the area dictated by the arguments provided to the ` Axis() ` function. The consistency of the scaling established by ` plot.window() ` is evident in that the data points plotted earlier line up with the appropriate ticks on the axes. These are the fundamentals of building any graph on the canvas.
+The axes clearly label the scaling of the canvas in the plot region, where an automated algorithm has determined aesthetically pleasing tick intervals and tick labels. The consistency of the scaling established by ` plot.window() ` is now evident, in that the data points plotted earlier line up with the appropriate ticks on the axes. These are the fundamentals of building any graph on the canvas.
 
 
 ## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Labeling the axes
 
-The ` title() ` function is a unified tool for labeling different parts of the graph. Most style guides for figures suggest that the area where data are plotted should be differentiated from the rest of the figure. The ` box() ` function can be used with no arguments to put a box around the area with plotted data. As with previous graphics tools, the location and symbolism used for the elements being added are highly configurable with additional arguments. However, the default arguments are used for now, and detail on arguments that are commonly altered from the defaults are discussed later.
+The ` title() ` function is a unified tool for labeling different parts of the graph. Most style guides for figures suggest that the area where data are plotted should be differentiated from the rest of the figure. The ` box() ` function with no arguments is reintroduced here to clearly delineate the plot region from the rest of the canvas. The box overlaps with the axes lines, such that the axes are effectively only providing the ticks and tick labels. As with previous graphics tools, the location and symbolism used for the elements being added are highly configurable with additional arguments. However, the default arguments are used for now, and detail on arguments that are commonly altered from the defaults are discussed later.
 
 ```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
 
@@ -1352,13 +1356,23 @@ axis(
 axis(
   side = 2,
   at = seq(from = 0, to = 1, by = 0.2),
-  labels = c("0", "20", "40", "60", "80", "100")
+  labels = c("0%", "20%", "40%", "60%", "80%", "100%")
 )
 
 # Draw a box around the outer edge of the canvas
 box(which = "outer")
 
 ```
+
+Description of functions and arguments being used for the first time:
+
+- ` axis() `: Renders the symbolism of an axis with labeled ticks
+    - ` labels `: A vector of values specifying the labels for ticks. This argument can only be used if the locations of ticks are specified with the ` at ` argument, and the length of the vector of labels should match the length of the vector of tick locations.
+        - ` seq(from = 0, to = 100, by = 20) `: Results in numeric tick labels corresponding to 0, 20, 40, 60, 80, and 100 percent
+        - ` c("0%", "20%", "40%", "60%", "80%", "100%") `: Results in text tick labels corresponding to 0, 20, 40, 60, 80, and 100 percent, including the percent symbol
+        
+The automation of tick label generation is thus only limited by the imagination of how numerical or character vectors can be generated. However, the tick labels can always be hard coded to the exact symbolism desired with an explicitly defined vector of character strings. As with many of the labeling functions in R graphics, vectors of R expressions can also be used if mathematical notation is needed (see ` help(plotmath) `). Examples of that practice are provided in later materials.
+
 
 ### `r sec1`.`r sec2`.`r sec3 <- sec3 + 1; sec3`. Customizing axis locations
 
