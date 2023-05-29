@@ -5,19 +5,47 @@ title: "A deeper dive into graphing in base R"
 Compiled on `r format(Sys.time(), format = "%e %B %Y %H:%M")`.
 
 ```{r setup, include=FALSE}
+
 knitr::opts_chunk$set(echo = TRUE)
+
+indent <- function(length = 8) {
+  return(
+    paste(
+      rep("&nbsp;", times = length),
+      collapse = ""
+    )
+  )
+}
+
 sec1 = 0
+
 ```
 
-Typical tutorials on graphing in R aim to rapidly develop understanding of higher level graphing functions to get users generating useful graphs quickly. While this approach has merit in certain use cases, it tends to gloss over the lower level understanding of detail on how high level graphing functions work. This lack of detail limits the creativity with which a user is able to create graphs not supported by the higher level functions or the specificity with which a user can make a graphical rendering look exactly as desired. Lack of detail also limits the skill with which a user can troubleshoot graphing code that does not render as expected.
+`r indent()`
+Typical tutorials on graphing in R aim to rapidly develop understanding of higher level graphing functions to allow users to generate useful graphs quickly. 
+While this approach has merit in certain use cases, it tends to gloss over understanding of the lower level graphing functions that allow higher level graphing functions to work. 
+A lack of proficiency with lower level graphing functions limits the creativity or specificity with which a user is able to create or adjust graphs in ways not supported by the higher level functions. 
+A lack of understanding of the underlying operations of high level graphing functions also limits the skill and efficiency with which a user can troubleshoot graphing code that does not render as expected.
 
-This tutorial is designed to provide a deeper dive into graphing with base R functions. It first reviews the basics of graphics devices, then progresses to build scaffolding of examples with increasing levels of detail into how graphing is implemented in base R. While the tutorial attempts to build in complexity and detail one step at a time, some familiarity with the manipulation of fundamental data types and the operation of functions in R is probably necessary to take full advantage of this tutorial. Completing a higher level tutorial on graphing in base R before working through this more detailed tutorial may be an effective strategy.
+`r indent()`
+This tutorial focuses on graphics tools typically loaded by default in an R session (i.e., base R) , including the **grDevices** package and the **graphics** package. 
+Other graphing tools available include the  **grid** graphics package that is an alternative implementation of the **graphics** package. 
+Popular higher level graphing tools that use the low lever tools in **grid** include the **lattice** and **ggplot2** packages. 
+A full understanding of **grid** enhanced with the conveniences of **lattice** or **ggplot2** are another way to take full control over the appearance of complex data visualizations, though these topics are not covered here. 
+All of these packages ultimately use the same graphics rendering interfaces provided by **grDevices**.
+With detailed enough understanding of how each of these graphics packages organizes the canvas, rendering generated from any or all of them can be combined in the same figure.
 
-The reader should also be prepared to experiment with an open session in R (perhaps starting with code copied from this document) to take full advantage of the tutorial. An effective way to self-assess understanding of the principles in this document is to challenge yourself to predict what a function will do if you change an argument, and then testing that prediction with your own code. Ongoing learning of the R functions that allow exploration of the data structures of arguments to R functions and the return values from R functions is highly recommended for rapid progress in R programming and debugging skill.
+`r indent()`
+This tutorial is designed to provide a deeper dive into graphing with base R functions. 
+It first reviews the basics of the graphics devices that are the rendering engines for all the graphics packages listed above.
+Then the tutorial gradually builds the logical scaffolding of the organization of the graphics canvas used in base R, using examples that progressively build in complexity and introduce new features one step at a time. 
+Care is taken to provide a thorough description each time a new function or a new argument to a function is introduced.
+The intended use of this tutorial is for the reader to experiment with an open session in R (e.g., in RStudio) based on the code provided.
+Experimentation with the values of parameters or values passed to arguments of functions is highly recommended to solidify understanding.
+Reading this material without active experimentation will likely result in minimal retention of the concepts. 
 
-This tutorial focuses on graphics tools typically loaded by default in an R session, including the **grDevices** package and the **graphics** package. Not covered here are a family of tools based on the  **grid** graphics package that is an alternative implementation of the **graphics** package and thus provides an alternative interface to creating graphical objects. Popular higher level graphing tools that use **grid** include the **lattice** and **ggplot2** packages. A full understanding of **grid** with the conveniences of **lattice** or **ggplot2** are another way to take full control over the appearance of complex data visualizations. All of these packages use the same rendering tools provided by **grDevices**, so graphics generated from any of them can be combined on the same canvas.
 
-```{r include = FALSE}
+```{r devices_heading, include = FALSE}
 sec1 <- sec1 + 1
 sec2 <- 0
 
@@ -25,141 +53,227 @@ hn <- paste0(sec1)
 ```
 # `r hn`. Graphics devices
 
-Opening a graphics device creates a blank canvas upon which graphs will be rendered. The most common graphing tools in R (including base R, grid, and ggplot) all use the same canvas provided by a given graphics device. Therefore, if you understand the details of how to control the specific areas of the canvas that are used by a given graphing tool, you can combine or overlap the results of any or all of these tools on the same canvas.
+`r indent()`
+Opening a graphics *device* creates a blank canvas upon which graphs will be rendered and opens a standardized interface for providing the instructions for drawing on that canvas.
+Many graphing tools commonly used in R (including base R, grid, and ggplot) use the same collection of graphics devices that have the same interface to the rendering engine.
+Therefore, if you understand the details of how to get each of the graphing tools to work with a specific area of the canvas, you can combine or overlap the results of any or all of these tools on the same canvas.
 
-Graphics devices are designed to have a common interface for the functions used to add symbols to the graphs. Ideally, calling a given graphing function should create the same rendered visualization regardless of which device is in use. This feature provides the modularity that a given block of graphing code should create the same image regardless of using a device that renders it on the screen, renders it to a raster image file, or renders it to a vector graphics format. This degree of modularity is seldom fully realized. Particular devices may not have all the features necessary to render all aspects of a given graphing tool. For example, identical fonts or font sizes may not be available across all graphics devices, and transparency in colors will not render properly on all devices. You should expect differences between how different devices plot the same graph, so early consideration of the appropriate device that generates the proper format for the final product is encouraged.
+`r indent()`
+Due to the standardization of the interface across the available graphics devices, defining graphics with the tools from any graphics package should create the same visualization, regardless of the device used for rendering.
+You do not need to understand the nature of this interface to use it, but understanding its standardization explains how multiple graphics packages can make use of a common collection of devices for generating graphical products.
+This feature provides the modularity that a given block of graphing code should create the same image regardless of whether it is rendered on the screen, rendered to a graphics file, or rendered to an embedded image in Rmarkdown.
+However, the aspirational goals of this degree of modularity are also seldom completely realized.
+Particular devices may not have all the features necessary to render all aspects of a given graphing tool.
+For example, identical fonts or font sizes may not be available across all graphics devices, and the property of transparency in colors will not render properly on all devices.
+You should expect differences between how different devices render the same instructions from a given graphics package.
+These differences are sometimes subtle and sometimes catastrophic.
+Early consideration or experimentation of the appropriate device that generates the proper format for the final product is encouraged to avoid unpleasant surprises near deadlines.
 
-A default device (called the "null device") is likely automatically open in R, where the device used as default depends upon the platform you are using for development. In RStudio, the default device typically renders to the "Plots" tab, which is available in the bottom right panel in a default installation. The device that renders to the "Plots" tab is convenient, but the size and aspect ratio of graphs rendered in this panel will change depending on how your RStudio window is configured. This lack of consistency in size and aspect ratio is problematic when refining figures or sharing code that generates figures, and use of an external device that allows consistency through programmatic control over the dimensions of the figure is suggested.
+`r indent()`
+A default device, sometimes called the "null device", is likely automatically open in a given R session.
+The nature of the default device depends upon the platform you are using for development. 
+In an R session operated from RStudio, the default device typically renders to the "Plots" tab, which is available in the bottom right panel in a default installation of RStudio.
+The device that renders to the "Plots" tab is convenient, but the size and aspect ratio of graphs rendered in this panel will change depending on how your RStudio window is configured.
+This lack of consistency in size and aspect ratio is problematic when refining figures or sharing code that generates figures.
+Therefore, use of an external device often facilitates consistency through programmatic control over the dimensions of the figure and its contents.
 
-Let's try graphing on your default device. First, we need a theoretical data set to visualize. Exponential decay, or the processing of something as a constant fraction of the current amount, is a pattern we see everywhere in nature. If we can watch the concentration of a reactant while a chemical reaction is occurring, we might see the concentration ($C$) of a reactant decrease exponentially with time ($t$). For those familiar with chemistry, this pattern would support first-order rate limitation of the reaction. Let's say we are watching a chemical reactor over a 10 minute time period, and we are able to check the concentration every minute.
+`r indent()`
+Let's first try graphing on your default device in an R session. 
+First, we need an example of a commonly observed pattern in nature to provide a relevant practical example from environmental science. 
+Exponential decay is a pattern we see everywhere in nature, and suggests the consumption of the stuff of interest as a constant fraction of the current amount.
+More generally, visualization of time series data reflecting a system's behavior is a common need in environmental science.
+For example, if we measure the concentration of a reactant periodically while a chemical reaction is occurring, we might see the concentration ($C$) of a reactant with limited availability decrease exponentially with time ($t$). 
+For those familiar with chemistry, this pattern would be consistent with a first-order rate limitation of the reaction.
+Let's say we are watching a chemical reactor over a 10 minute experiment, and we are somehow able to measure the concentration of a limiting reactant every minute.
+In R, the `seq.default()` function might be used to define the vector of times at which we have measurements.
 
-```{r}
+```{r devices_reactionTime}
 
+# Assign a vector of measurement times to a variable
 time <- seq.default(from = 0, to = 10, by = 1)
 
 ```
 
-Description of functions and arguments being used for the first time:
+The variable `time` is now an numeric atomic vector of 11 values evenly spaced between 0 and 10.
 
-- ` seq.default() `: Creates a sequence of values 
-    - ` from `: The starting value of the sequence
-        - ` 0 ` : The first value of the sequence should be 0
-    - ` to `: The end of the sequence should be less than or equal to this value
-        - ` 10 ` : End the sequence at less than or equal to ten 
+*Functions and arguments being used for the first time*
+
+- `seq.default()`: Creates a sequence of values 
+    - `from`: The starting value of the sequence
+        - `0` : The first value of the sequence should be 0
+    - `to`: The end of the sequence should be less than or equal to this value
+        - `10` : End the sequence at less than or equal to ten 
     - ` by `: The distance between consecutive elements of the sequence
-        - ` 1 ` : Increment each element of the sequence by 1
+        - `1` : Increment each element of the sequence by 1
 
-This results in an atomic numerical vector of values from 0 to 10.
+`r indent()`
+We can use the `print()` function to view a summary of the contents of the variable.
 
-```{r}
+```{r device_reactionConc}
 
-print(time)
+# Show a summary of the variable in standard output
+print(x = time)
 
 ```
 
-Description of functions and arguments being used for the first time:
+*Functions and arguments being used for the first time*
 
-- ` print() `: Prints a summary of the content of a variable to the output. In this case, the output ends up in the compiled Rmarkdown report. When using R from the console, the output is printed to the console. Typing a variable name in the console and hitting enter has the same effect as calling `print()` on that variable.
+- `print()`: Prints a summary of the content of a variable to the output. In this case, the output ends up in the compiled Rmarkdown report. When using R from the console, the output is printed to the console. Typing a variable name in the console and hitting enter has the same effect as calling `print()` on that variable.
+    - `x`: The object for which a summary should be generated
+        - `time`: Prints the summary of the time vector. 
 
-If the reaction is continuously consuming the reactant at a rate of half of the concentration per minute, then we expect the following exponential decay function to describe the change in concentration after some initial value $C_0$.
+`r indent()`
+If the reaction is continuously consuming the reactant at a rate of half of the current concentration per minute, then we expect the following exponential decay function to describe the change in concentration after some initial value $C_0$ at the beginning of the experiment.
 
 $$
 C = C_0 e^{-0.5 t}
 $$
-We can use this equation to calculate the concentration of the reactant at each of the times in the vector created earlier. Let's assume the initial concentration is $5 \ \mathrm{mmol \ L^{-1}}$.
+We can use this equation to calculate the concentration of the reactant at each measurement time, as defined in the vector of times created earlier
+Let's assume the initial concentration is $\mathrm{5 \ mmol \ L^{-1}}$.
 
-```{r}
+```{r devices_concCalc}
 
+# Assign an exponential decay function of time to a variable
 conc <- 5 * exp(-0.5 * time)
 
 ```
 
-This results in an atomic numerical vector the same length as `time`, where each element contains the calculation of the concentration derived from the corresponding element of `time`. 
+*Functions and arguments being used for the first time*
 
-```{r}
+- `exp()`: computes a power of Euler's number
+    - `x`: the number representing the exponent of Euler's number (i.e., $e^x$)
+        - `0.5 * time`: An exponent allowing calculation of a decay rate of half the concentration per minute
+ 
+The variable `conc` is now an numeric atomic vector with the same number of elements as `time`, where each element contains the calculation of the concentration derived from the corresponding element of `time`. 
 
-print(conc)
+```{r devices_printConc}
+
+# Show a summary of the variable in standard output
+print(x = conc)
 
 ```
 
-A common data structure for keeping data sets together in R is the data frame. For example, we might want to keep the times and the concentrations at those times together.
+`r indent()`
+The data frame is a common data structure used in R for keeping corresponding data sets together in a table.
+For example, we might want to keep the measurement times and the concentrations at those times together in a table.
 
-```{r}
+```{r devices_makeReactDataFrame}
 
+# Combine time and concentration vectors into a data frame
 react <- data.frame(t = time, C = conc)
 
 ```
 
-Description of functions and arguments being used for the first time:
+*Functions and arguments being used for the first time*
 
-- ` data.frame() `: Creates a data frame
-    - ` t = time `: Creates the first column named `t` based on the values in the vector `time`
-    - ` C = conc `: Creates the second column named `C` based on the values in the vector `conc`
+- `data.frame()`: Creates a data frame
+    - `t`: Specifies the name of the first column as "t". Arguments can be passed to `data.frame` with names or generically without names. If names are added the columns will be named corresponding to the names of the arguments
+        - `time`: Assigns the vector `time` as the values of the first column in the data frame
+    - `C`: Specifies the name of the second column as "C". Arguments can be passed to `data.frame` with names or generically without names. If names are added the columns will be named corresponding to the names of the arguments
+        - `conc`: Assigns the vector `conc` as the values of the first column in the data frame
     
-The result is a table of values where the columns are named `t` and `C` and the rows contain values for each of these variable that correspond to a given sampling time. Note that you will get an error if you try to combine vectors of unequal length into a data frame.
+`r indent()`
+The variable `react` is now a table of values where the columns are named `t` for time and `C` for concentration and the rows contain values for each of these properties that correspond to a given measurement.
+Note that you will get an error if you try to combine vectors of unequal length into a data frame.
 
-```{r}
+```{r devices_printReactDataFrame}
 
-print(react)
+# Show a summary of the variable in standard output
+print(x = react)
 
 ```
 
-Among other indexing techniques, the `$` operator can be used to retrieve the original vectors composing the columns of a data frame.
+`r indent()`
+Among other indexing techniques, the `$` operator can be used to retrieve the original vector composing each column of the data frame.
 
 The time vector that constitutes the first column...
 
-```{r}
+```{r devices_pringTimeColumn}
 
-print(react$t)
+# Show a summary of the data frame column in standard output
+print(x = react$t)
 
 ```
 
 The concentration vector that constitutes the second column...
 
-```{r}
+```{r devices_printConcColumn}
 
-print(react$C)
-
-```
-
-We are ready to plot the data! The `plot()` function is a convenience function that can take care of many details for us. The default device for plotting in Rmarkdown will allow the figure to be rendered in the report immediately after the code chunk with the call to the `plot()` function. Let's plot concentration over time from our chemical reactor.
-
-```{r}
-
-plot(x = react$t, y = react$C)
+# Show a summary of the data frame column in standard output
+print(x = react$C)
 
 ```
 
-Description of functions and arguments being used for the first time:
-
-- ` plot() `: A convenience function for creating a default plot very quickly
-    - ` x `: The vector of values specifying the values for data points on the abscissa axis (a.k.a. the x axis)
-    - ` y `: The vector of values specifying the values for data points on the on the ordinate axis (a.k.a. the y axis)
-
-If we put it all together, you should be able to paste the following code in your R script or console and generate the same graph using the default device in your R environment. Note that the columns of the data frame are being constructed directly in this code, without the incremental construction of the `time` and `conc` variables. This code demonstrates how the `$` operator can also be used to create a new column in a data frame.
+`r indent()`
+We have what we need to plot the data, but there is a more direct way to generate the data frame with a couple lines of code.
+If we know ahead of time that we want these data in a table data structure, we can build the data frame more directly by starting with a single column for the time vector.
 
 ```
 react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
-react$C <- 5 * exp(-0.5 * react$t)
-plot(x = react$t, y = react$C)
 ```
 
-When making meaningful graphs, you will likely quickly reach a point where you want more flexibility or automation than the features offered by the default graphics device. For example, the default device may have an aspect ratio that depends on how the window is currently configured. When making publication-ready graphs, you will typically want direct control over that aspect ratio, or the sizing of the figure in general. Fortunately, the default device can be replaced by calling functions from the `grDevices` package that will render the graphics elsewhere. Let's review a few of these options.
+Then, use the `$` operator to add a second column to the data frame with the calculated concentration vector.
 
-```{r include = FALSE}
+```
+react$C <- 5 * exp(-0.5 * react$t)
+```
+
+`r indent()`
+The `plot()` function is an high level graphics function that makes several assumptions necessary to handle the details of creating a rudimentary graph.
+When calling `plot()` in the code chunk below, the default device for plotting in Rmarkdown will result in the figure being rendered in the report immediately after the chunk.
+For experimentation, you can cut and paste this code into an R console or script, and executing it will cause the graph to be rendered by your default graphics device.
+Putting the calculated data and a call to `plot()` together, let's plot concentration of the reactant in our chemical reactor over time.
+
+```{r devices_plotReactData}
+
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
+
+# Plot the exponential decay data
+plot(x = react$t, y = react$C)
+
+```
+
+*Functions and arguments being used for the first time*
+
+- `plot()`: An abstract convenience function for creating a plot with default properties very quickly
+    - `x`: The vector specifying the values for data points on the abscissa (a.k.a. the x axis)
+        - `react$t`: Data should be plotted on the x axis according to the time of measurement
+    - `y`: The vector specifying the values for data points on the ordinate (a.k.a. the y axis)
+        - `react$C`: Data should be plotted on the y axis according the the concentration associated with the time of measurement
+
+`r indent()`
+When making meaningful graphs, you will likely quickly reach a point where you want more flexibility or automation than the features offered by the default graphics device.
+For example, the default device may have an aspect ratio that depends on how the window is currently configured.
+When making publication-ready graphs, you will typically want direct control over that aspect ratio, or the sizing of the figure in general.
+Fortunately, the default device can be replaced by calling functions from the `grDevices` package that will render the graphics elsewhere. Let's review a few of these options.
+
+
+```{r devices_window_heading, include = FALSE}
 sec2 <- sec2 + 1
 
 hn <- paste0(sec1, ".", sec2)
 ```
 ## `r hn`. Rendering graphs directly to a new window
 
-Graphics devices launched by calling the `windows()` or `quartz()` functions will render to a new pop-up window on your operating system desktop. A different device is needed for Windows or Mac computers because the nature of desktop windows are different depending on your operating system. The ` windows() ` function will open a pop-up graphics device on a PC, and the ` quartz() ` function will open a pop-up graphics device on a Mac. These devices cannot be demonstrated in an Rmarkdown report, so use the following code as a basis for experimentation. While it may not be necessary in your environment, the `graphics.off()` function is being used here to be sure that any other graphics devices have been closed (other than the default). Note the width, height, and font size for the graphics canvas are specified as arguments to the device functions here to demonstrate the control you gain with using a device other than the default.
+`r indent()`
+Graphics devices launched by calling the `windows()` or `quartz()` functions will render to a new pop-up window on your operating system desktop.
+A different device is needed for Windows or Mac computers because the nature of desktop windows are different depending on your operating system.
+The `windows()` function will open a pop-up graphics device on a PC, and the `quartz()` function will open a pop-up graphics device on a Mac.
+These devices cannot be demonstrated in an Rmarkdown report, so use the following code as a basis for experimentation.
+While it may not be necessary in your environment, the `graphics.off()` function is being used here to be sure that any other graphics devices have been closed (other than the default).
+Note the width, height, and font size for the graphics canvas are specified as arguments to the device functions here to demonstrate the control you gain with using a device other than the default.
 
 For a PC:
 
 ``` 
 # Shut down any existing devices
 graphics.off()
+
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
 
 # Open the windows graphics device 
 windows(
@@ -168,9 +282,7 @@ windows(
   pointsize = 12
 )
 
-# Plot exponential decay data
-react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
-react$C <- 5 * exp(-0.5 * react$t)
+# Plot the exponential decay data
 plot(x = react$t, y = react$C)
 ```
 
@@ -180,6 +292,10 @@ For a Mac:
 # Shut down any existing devices
 graphics.off()
 
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
+
 # Open the quartz graphics device 
 quartz(
   width = 6,
@@ -187,42 +303,57 @@ quartz(
   pointsize = 12
 )
 
-# Plot exponential decay data
-react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
-react$C <- 5 * exp(-0.5 * react$t)
+# Plot the exponential decay data
 plot(x = react$t, y = react$C)
 ```
 
-Description of functions and arguments being used for the first time:
+*Functions and arguments being used for the first time*
 
-- ` graphics.off() `: Close any graphics devices that are currently open (except the default)
-- ` windows() ` for a PC or ` quartz() ` for a Mac: Opens a graphics device that writes to a pop-up window in the Windows operating system
-    - ` width `: Width of the canvas where graphical elements can be added
-        - ` 6 `: Width of the canvas will be 6 inches
+- `graphics.off()`: Close any graphics devices that are currently open (except the default)
+- `windows()` for a PC or `quartz()` for a Mac: Opens a graphics device that writes to a pop-up window in the Windows operating system
+    - `width`: Width of the canvas where graphical elements can be added
+        - `6`: Width of the canvas will be 6 inches
     - ` height `: Height of the canvas where graphical elements can be added
-        - ` 5 `: Height of the canvas will b 5 inches
+        - `5`: Height of the canvas will b 5 inches
     - ` pointsize `: The default point size of characters and symbols
-        - ` 12 `: Rendering device will use a 12 point font for characters (12/72 = 1/6 of an inch). You might note from the documentation that 12 is the default value for this argument. Therefore, the same result would be obtained if this argument were removed from the function call.
+        - `12`: Rendering device will use a 12 point font for characters (12/72 = 1/6 of an inch). You might note from the documentation that 12 is the default value for this argument. Therefore, the same result would be obtained if this argument were removed from the function call.
 
 
-```{r include = FALSE}
+```{r devices_graphicsFiles_heading, include = FALSE}
 sec2 <- sec2 + 1
 
 hn <- paste0(sec1, ".", sec2)
 ```
 ## `r hn`. Rendering graphs to vector or raster files
 
-You might want to render a graph directly to a file to send to a colleague or include in another report. There are multiple devices available in `grDevices` that allow direct generation of industry standard graphics data files.
+`r indent()`
+You might want to render a graph directly to a file to send to a colleague or include in another report.
+Multiple devices are available in the package `grDevices` that allow direct generation of industry standard graphics data files.
 
-The device opened by the `pdf()` function renders graphics to a file in vectorized postscript format (e.g., Adobe PDF files), and works on both Mac and PC computing platforms (as well as many others). Key arguments to the function allow specifying the path to the file to be generated, as well as direct control over the basic size and default font point size for a given canvas. As with many devices that create files, this device requires the `dev.off()` function to be called before the graphics file is written. Another program will not be able to open the file being created until `dev.off()` is called to shut down the device.
+`r indent()`
+The device opened by the `pdf()` function renders graphics to a file in vectorized postscript format (e.g., Adobe PDF files), and works on both Mac and PC computing platforms (as well as many others).
+Key arguments to the function allow specifying the path to the file to be generated, as well as direct control over the basic size and default font point size for a given canvas.
+As with many devices that create files, this device requires the `dev.off()` function to be called before the graphics file is written.
+Another program will not be able to open the file being created until `dev.off()` is called to shut down the device.
 
-Calls to `graphics.off()` may be particularly useful when debugging graphing code that is creating files. Calling this function before starting a new graph will make sure that no artifact graphics devices have been left open due to a fatal error in a previous execution of a script. For devices that write to a file, previously opened devices writing to the same file name will likely cause this code to fail because the file cannot be overwritten if it is currently open.
+`r indent()`
+Calls to `graphics.off()` may be particularly useful when debugging graphing code that is creating files.
+Calling this function before starting a new graph will make sure that no artifact graphics devices have been left open due to a fatal error in a previous execution of a script.
+For devices that write to a file, previously opened devices writing to the same file name will likely cause this code to fail because the file cannot be overwritten if it is currently open.
 
-The following code generates a sample PDF file when run in an R session with the working directory set to where the file should be written. You are encouraged to cut and paste this code into an R script, and experiment with running the script with different values for the arguments to confirm you understand the behaviors they control. Note that the script may not run properly if you have the resulting graphics file open in a separate PDF viewer, if that PDF viewer locks the file while it is open. SumatraPDF is a useful PDF viewer for development in Windows because it does not lock the file and automatically updates your view of the PDF file when it is rewritten by your R script.
+`r indent()`
+The following code generates a sample PDF file when run in an R session with the working directory set to where the file should be written.
+You are encouraged to cut and paste this code into an R script, and experiment with running the script with different values for the arguments to confirm you understand the behaviors they control.
+Note that the script may not run properly if you have the resulting graphics file open in a separate PDF viewer, if that PDF viewer locks the file while it is open.
+SumatraPDF is a useful PDF viewer for development in Windows because it does not lock the file and automatically updates your view of the PDF file when it is rewritten by your R script.
 
 ``` 
 # Shut down any existing devices
 graphics.off()
+
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
 
 # Open the PDF graphics device 
 pdf(
@@ -232,34 +363,42 @@ pdf(
   pointsize = 12
 )
 
-# Plot exponential decay data
-react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
-react$C <- 5 * exp(-0.5 * react$t)
+# Plot the exponential decay data
 plot(x = react$t, y = react$C)
 
 # Terminate the graphics device
 dev.off()
 ```
-Description of functions and arguments being used for the first time:
+*Functions and arguments being used for the first time*
 
-- ` pdf() `: Opens a graphics device that writes to a postscript file
-    - ` file `: Path to the file where the graphics will be written
-        - ` "./graphics_test.pdf" `: Results in the vector graphics postscript file "graphics_test.pdf" being written to the working directory.
-    - ` width `: Width of the canvas where graphical elements can be added
-        - ` 6 `: Width of the canvas will be 6 inches
-    - ` height `: Height of the canvas where graphical elements can be added
-        - ` 5 `: Height of the canvas will b 5 inches
-    - ` pointsize `: The default point size of characters and symbols
-        - ` 12 `: Rendering device will use a 12 point font for characters (12/72 = 1/6 of an inch). You might note from the documentation that 12 is the default value for this argument. Therefore, the same result would be obtained if this argument were removed from the function call.
-- ` dev.off() `: Closes the most recently opened graphics device. For devices that write to a file (like ` pdf() `). This typically needs to be called for the file to be written to the disk and available to be opened by other applications.
+- `pdf()`: Opens a graphics device that writes to a postscript file
+    - `file`: Path to the file where the graphics will be written
+        - `"./graphics_test.pdf"`: Results in the vector graphics postscript file *graphics_test.pdf* being written to the working directory.
+    - `width`: Width of the canvas where graphical elements can be added
+        - `6`: Width of the canvas will be 6 inches
+    - `height`: Height of the canvas where graphical elements can be added
+        - `5`: Height of the canvas will b 5 inches
+    - `pointsize`: The default point size of characters and symbols
+        - `12`: Rendering device will use a 12 point font for characters (12/72 = 1/6 of an inch). You might note from the documentation that 12 is the default value for this argument. Therefore, the same result would be obtained if this argument were removed from the function call.
+- `dev.off()`: Closes the most recently opened graphics device. For devices that write to a file (like `pdf()`). This typically needs to be called for the file to be written to the disk and available to be opened by other applications.
 
-If you are a Windows user, you may want to look into another vectorized graphics device opened by the `win.metafile()` function. This device allows creation of vectorized graphics in Microsoft "enhanced metafile" format. Graphics in this format can either be written to a file or written directly to your Windows clipboard to be pasted into other documents (e.g., MS Word or MS PowerPoint files).
+`r indent()`
+If you are a Windows user, you may want to look into another vectorized graphics device opened by the `win.metafile()` function.
+This device allows creation of vectorized graphics in Microsoft "enhanced metafile" format.
+Graphics in this format can either be written to a file or written directly to your Windows clipboard to be pasted into other documents (e.g., MS Word or MS PowerPoint files).
 
-The `grDevices` package provides many options for generating raster image files. For example, `jpg()` allows creation of image files in a compressed raster format that is very commonly used for pictures embedded in web pages. Devices for raster files usually allow some way to control the quality of the image (a compromise with file size) by allowing specification of the pixel resolution.
+`r indent()`
+The `grDevices` package provides many options for generating raster image files.
+For example, the `jpeg()` function opens a device that allows creation of image files in a compressed raster format that is very commonly used for pictures embedded in web pages.
+Devices for raster files usually allow some way to control the quality of the image (a compromise with file size) by allowing specification of the pixel resolution.
 
 ``` 
 # Shut down any existing devices
 graphics.off()
+
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
 
 # Open the JPG graphics device 
 jpeg(
@@ -271,29 +410,27 @@ jpeg(
   res = 600
 )
 
-# Plot exponential decay data
-react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
-react$C <- 5 * exp(-0.5 * react$t)
+# Plot the exponential decay data
 plot(x = react$t, y = react$C)
 
 # Terminate the graphics device
 dev.off()
 ```
-Description of functions and arguments being used for the first time:
+*Functions and arguments being used for the first time*
 
-- ` jpeg() `: Opens a graphics device that writes to a postscript file
-    - ` file `: Path to the file where the graphics will be written
-        - ` "./graphics_test.jpg" `: Results in the compressed raster graphics file "graphics_test.jpg" being written to the working directory.
-    - ` width `: Width of the canvas where graphical elements can be added
-        - ` 6 `: Width of the canvas will be 6 inches (as indicated by `units` argument)
+- `jpeg()`: Opens a graphics device that writes to a postscript file
+    - `file`: Path to the file where the graphics will be written
+        - `"./graphics_test.jpg"`: Results in the compressed raster graphics file *graphics_test.jpg* being written to the working directory.
+    - `width`: Width of the canvas where graphical elements can be added
+        - `6`: Width of the canvas will be 6 inches (as indicated by `units` argument)
     - ` height `: Height of the canvas where graphical elements can be added
-        - ` 5 `: Height of the canvas will b 5 inches (as indicated by `units` argument)
+        - `5`: Height of the canvas will b 5 inches (as indicated by `units` argument)
     - ` pointsize `: The default point size of characters and symbols
-        - ` 12 `: Rendering device will use a 12 point font for characters (12/72 = 1/6 of an inch). You might note from the documentation that 12 is the default value for this argument. Therefore, the same result would be obtained if this argument were removed from the function call.
-    - ` units `: Units for the width and height arguments
-        - ` "in" `: Units of inches are used for width and height
-    - ` res `: Resolution in pixels per inch
-        - ` 600 `: A fairly high resolution of 600 pixels per inch for a high quality image. The size of the file generated is highly sensitive to the resolution selected.
+        - `12`: Rendering device will use a 12 point font for characters (12/72 = 1/6 of an inch). You might note from the documentation that 12 is the default value for this argument. Therefore, the same result would be obtained if this argument were removed from the function call.
+    - `units`: Units for the width and height arguments
+        - `"in"`: Units of inches are used for width and height
+    - `res`: Resolution in pixels per inch
+        - `600`: A fairly high resolution of 600 pixels per inch for a high quality image. The size of the file generated is highly sensitive to the resolution selected.
 
 Functions to open devices for other raster formats include `bmp()`, `png()`, and `tiff()`.
 
@@ -305,28 +442,43 @@ hn <- paste0(sec1, ".", sec2)
 ```
 ## `r hn`. Graphing in Rmarkdown
 
-When Rmarkdown is being compiled to an html file, the default graphics device used by code chunks embedded in the markdown is `png()`. This device creates a lossless portable graphics format raster file that can be embedded in the html and later displayed by a web browser application when viewing the file. The graphics device is open by default, so an image can be embedded in a compiled Rmarkdown report without opening a device. However, chunk options can be changed to allow graphics device arguments to be altered from their default values. For example, the code chunk generating the graph below sets new values for three chunk options that result in a customized canvas for the associated graphics device. Code chunk options are set by including a list of key-value pairs after the r in the curly brackets specifying the beginning of the chunk.
+`r indent()`
+When Rmarkdown is being compiled to an html file, the default graphics device used by code chunks embedded in the markdown is `png()`.
+This device creates a lossless portable graphics format raster file that can be embedded in the html and later displayed by a web browser application when viewing the file.
+The graphics device is open by default, so an image can be embedded in a compiled Rmarkdown report without opening a device.
+However, chunk options can be changed to allow graphics device arguments to be altered from their default values.
+For example, the code chunk generating the graph below sets new values for chunk options that result in a customized canvas for the associated graphics device.
+Code chunk options are set by including a list of key-value pairs after the r in the curly brackets specifying the beginning of the chunk.
 
 ```
- {r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+ {r fig.align = 'center', fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
 ```
 
 Description of Rmarkdown chunk options being used for the first time:
 
-- ` fig.width `: Width of the canvas where graphical elements can be added
-    - ` 6 `: Width of the canvas will be 6 inches
-- ` fig.height `: Height of the canvas where graphical elements can be added
-    - ` 5 `: Width of the canvas will be 6 inches
-- ` dev.args `: List of arguments to be passed to the device
-    - ` list(pointsize = 12) `: The pointsize argument will be passed to the rendering device, resulting in use of a 12 point font for characters (12/72 = 1/6 of an inch)
+- `fig.align`: Alignment of the resulting figure with respect to margins
+    - `'center'`: Center the figure between the margins
+- `fig.width`: Width of the canvas where graphical elements can be added
+    - `6`: Width of the canvas will be 6 inches
+- `fig.height`: Height of the canvas where graphical elements can be added
+    - `5`: Width of the canvas will be 5 inches
+- `dev.args`: List of arguments to be passed to the device
+    - `list(pointsize = 12)`: The value of 12 for the `pointsize` argument will be passed to the rendering device, resulting in use of a 12 point font for characters (12/72 = 1/6 of an inch)
     
-The following code chunk provides an example of the use of these chunk options to specify the properties of the canvas created by the default ` png() ` device. The edges of the full canvas are delineated using a call to the `box()` graphics function. Note the resulting graph appears immediately following the code chunk.
+`r indent()`
+The following code chunk provides an example of the use of these chunk options to specify the properties of the canvas created by the default `png()` device.
+The edges of the full canvas are delineated using a call to the `box()` graphics function. Note the resulting graph appears immediately following the code chunk.
 
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+```
+ {r fig.align = 'center', fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+```
+```{r fig.align = 'center', fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
 
-# Plot exponential decay data
+# Define chemical reaction data
 react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
 react$C <- 5 * exp(-0.5 * react$t)
+
+# Plot the exponential decay data
 plot(x = react$t, y = react$C)
 
 # Draw a box around the outer edge of the canvas
@@ -334,19 +486,43 @@ box(which = "outer")
 
 ```
 
-Description of functions and arguments being used for the first time:
+*Functions and arguments being used for the first time*
 
-- ` box() `: Draws a box around predefined regions of a graphing canvas
-    - ` which `: Specifies which region of the graphing canvas around which to draw the box
-        - ` "outer" `: Results in a box around the outer edge of the canvas
+- `box()`: Draws a box around predefined regions of a graphing canvas
+    - `which`: Specifies which region of the graphing canvas around which to draw the box
+        - `"outer"`: Results in a box around the outer edge of the canvas
 
+`r indent()`
+The default chunk options can be changed for the `knitr` package tools using the `opts_chunk$set()` function.
+We are going to use the layout above for a considerable number of following examples, so let's change the defaults so we don't have to define these for every chunk using this graphics configuration.
 
-**Note to RStudio users:** The device used by RStudio to show graphics within the coding window is not the same device used to generate the compiled document. Be sure to view figures in the final compilation to verify they have the desired characteristics, and do not assume the test figures in the coding window will necessarily match the final figure.
+```{r rmarkdown_layout}
 
-Another device can be opened in a code chunk if the goal is to create a file rather than embed an image in the report. Perhaps the goal is to generate a raster image of the graph independently of the compiled report. For example, we can create a jpg file in a code chunk as demonstrated above, and put that file among the materials associated with this document. Note that the `results = 'hide'` chunk option is set for this chunk to prevent the message returned by `dev.off()` from appearing in the report.
+knitr::opts_chunk$set(
+  fig.align = "center",
+  fig.width = 6,
+  fig.height = 5,
+  dev.args = list(pointsize = 12)
+)
 
-```{r results = 'hide'}
+```
 
+`r indent()`
+A different device can be opened in a code chunk if the goal is to create a file rather than embed an image in the report.
+Perhaps the goal is to generate a raster image of the graph independently of the compiled report.
+For example, we can create a jpg file in a code chunk as demonstrated above, and put that file among the materials associated with this document.
+Note that the `results = 'hide'` chunk option is set for this chunk to prevent the message returned by `dev.off()` from appearing in the report.
+
+```
+ {r results = 'hide'}
+```
+```{r rmarkdown_jpg, results = 'hide'}
+
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
+
+# Define the relative path to the image file
 imagePath <- "./03_incremental/images/rmarkdown_example.jpg"
 
 # Open the JPG graphics device 
@@ -359,9 +535,7 @@ jpeg(
   res = 600
 )
 
-# Plot exponential decay data
-react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
-react$C <- 5 * exp(-0.5 * react$t)
+# Plot the exponential decay data
 plot(x = react$t, y = react$C)
 
 # Draw a box around the outer edge of the canvas
@@ -372,29 +546,42 @@ dev.off()
 
 ```
 
-No graphics were embedded in the report immediately following this code chunk, because this code is no longer using the default device for the chunk that would result in that behavior. However, we can embed the image we created into the markdown using the following code chunk and the `include_graphics()` function from the knitr package.
+`r indent()`
+No graphics were embedded in the report immediately following the code chunk above, because this code is no longer using the default device for the chunk that would result in that behavior.
+However, we can embed the image we created into the markdown using the following code chunk and the `include_graphics()` function from the `knitr` package.
 
-The function `normalizePath` here is used to change the relative path into the absolute path. The treatment of the working directory by the `knitr` package can be inconsistent. Using the normalized path for the current machine and forcing `knitr` to work with absolute paths will prevent improper assumptions about the relationship between the working directory and the location of the Rmarkdown file.
+`r indent()`
+The function `normalizePath()` is used here to change the relative path into the absolute path.
+The treatment of the working directory by the `knitr` package can be inconsistent.
+Using the normalized path for the current machine and forcing `knitr` to work with absolute paths will prevent improper assumptions about the relationship between the working directory and the location of the Rmarkdown file.
+These are assumptions that might cause this function to fail when the Rmarkdown file is not in the working directory.
 
-```{r}
+```{r rmarkdown_embedImage}
 
+# Normalize the relative image path to an absolute path
+#   on the current file system
 imagePathNormalized = normalizePath(path = imagePath)
-knitr::include_graphics(imagePathNormalized, rel_path = FALSE)
+
+# Embed the specified graphics file in the markdown report
+knitr::include_graphics(path = imagePathNormalized, rel_path = FALSE)
 
 ```
 
-Description of functions and arguments being used for the first time:
+*Functions and arguments being used for the first time*
 
-- ` normalizePath() `: Creates an absolute path to a file on the computer running the R code based on relative path provided.
-    - ` path `: The relative path to a file to be converted into an absolute path
-        - ` imagePath `: The relative path to the image file created by the previous chunk.
-- ` include_graphics() ` from the package ` knitr `: Embeds an image from a file into the compiled Rmarkdown report
-    - ` path `: The path to the file containing the image
-        - ` imagePathNormalized `: the absolute path to the file from the previous function call
-    - ` rel_path `: A switch for using relative paths
-        - ` FALSE `: Forces absolute paths to be used
+- `normalizePath()`: Creates an absolute path to a file on the computer running the R code based on relative path provided.
+    - `path`: The relative path to a file to be converted into an absolute path
+        - `imagePath`: The relative path to the image file created by the previous chunk.
+- `include_graphics()` from the package `knitr`: Embeds an image from a file into the compiled Rmarkdown report
+    - `path`: The path to the file containing the image
+        - `imagePathNormalized`: the absolute path to the file from the previous function call
+    - `rel_path`: A switch for using relative paths
+        - `FALSE`: Forces absolute paths relative to the current file system to be used to avoid inconsistencies in application of relative paths in `knitr`
 
-Note that the default scaling for an embedded image is to expand to the full width of the report. Chunk options like `out.width` and `fig.align` can be changed to control this behavior.
+You may notice that the default scaling for an embedded image is to expand to the full width of the report. Chunk options like `out.width` can be changed to control this behavior.
+
+**Note to RStudio users:** The device used by RStudio to render graphics within the code editor window is not the same device used to generate the compiled document. Be sure to view figures in the final compilation to verify they have the desired characteristics, and do not assume the test figures in the coding window will necessarily match the final figure.
+
 
 ```{r include = FALSE}
 sec1 <- sec1 + 1
@@ -402,37 +589,57 @@ sec2 <- 0
 
 hn <- paste0(sec1)
 ```
-# `r hn`. Dissecting the `plot()` function
+# `r hn`. Dissecting the `plot()` and `plot.default()` functions
 
-Taking full control over your figures requires a deeper understanding of what is happening when high-level functions like `plot()` are used. Specifically, you need to understand how S3 objects work in R, and thus why `plot.default()` is the function that actually gets called when you call `plot()` with a numeric vector for the `x` argument. Subsequently, understanding how `plot.default()` works requires understanding how the device canvas is scaled and how individual graphical elements are added to the canvas by lower level graphing functions. 
+`r indent()`
+Taking full control over your figures first requires a deeper understanding of what is happening when high-level functions like `plot()` are used.
+Specifically, you need to understand how S3 objects work in R, and thus why `plot.default()` is the function that actually gets called when you call `plot()` with a numeric vector for the `x` argument.
+Subsequently, understanding how `plot.default()` works requires understanding how the device canvas is scaled and how individual graphical elements are added to the canvas by lower level graphing functions.
 
+`r indent()`
+One way to explore the S3 abstraction for `plot()` is to look at the implementation of the function.
+For functions implemented with R code, the implementation of the function can be viewed by typing the function name at the console prompt, without parentheses.
 
-```{r include = FALSE}
-sec2 <- sec2 + 1
-
-hn <- paste0(sec1, ".", sec2)
-```
-## `r hn`. Why is `plot.default()` called when I call `plot()`? (S3 objects in R)
-
-One way to explore the S3 abstraction for `plot()` is to look at the implementation of the function. For functions implemented with R code, the implementation of the function can be viewed by typing the function name at the console prompt, without parentheses.
-
-``` {r}
+``` {r plot_code}
 
 plot
 
 ```
 
-The entire implementation of this function is simply a call to the `UseMethod()` function, which means that the function that ultimately gets called depends on the data type of the first argument to the `plot(x, y, ...)` function. In other words, a call to `plot` is not enough information to know what is going to happen, you also need to know the data type of the first argument to `plot(x, y, ...)`. This abstraction is an artifact of the S3 implementation of object oriented programming, and is the reason why calling `help("plot", package = "base")` yields so little specific information about the arguments that can be used. Calls to `plot()` are abstract and do not provide enough information to know what arguments will be valid.
+`r indent()`
+The entire implementation of this function is simply a call to the `UseMethod()` function, which means that the function that ultimately gets called depends on the data type of the first argument to the `plot(x, y, ...)` function.
+In other words, a call to `plot` is not enough information to know what is going to happen, you also need to know the data type of the first argument to `plot(x, y, ...)`.
+This abstraction is an artifact of the S3 implementation of object oriented programming, and is the reason why calling `help("plot", package = "base")` yields so little specific information about the arguments that can be used.
+Calls to `plot()` are abstract and do not provide enough information to know what arguments will be valid.
 
-For the purposes of this document, calls to `plot()` will always pass an atomic vector to the first argument `x`, which results in the `plot.default()` function being called by `UseMethod()`. Any arguments passed to `plot()` are also passed on to `plot.default()`. Note that the implementation of `plot.default()` contains the far more complex code that is actually creating the components of the figure. For further exploration, note that calling `help("plot.default")` also yields far more detailed information about how to use the `plot()` function on vector arguments than `help("plot", package = "base")`. 
+`r indent()`
+For the purposes of this document, calls to `plot()` will always pass an atomic vector to the first argument `x`, which results in the `plot.default()` function being called by `UseMethod()`.
+Any arguments passed to `plot()` are also passed on to `plot.default()`.
+Note that the implementation of `plot.default()` contains the far more complex code that is actually creating the components of the figure.
 
-``` {r}
+``` {r plot_defaultcode}
 
 plot.default
 
 ```
 
-For other examples of S3 functional abstractions, look at the implementation of the `print()` or `summary()` functions. See if you can find the specific implementations of these functions for particular data types that might be passed as the first argument to the abstraction (e.g., `print.default()` or `print.data.frame()`) . While detailed knowledge of the benefits of these object-oriented principles of polymorphic classes is not strictly necessary to use R, deeper understanding of this topic will allow for more informed troubleshooting when a function does something unexpected. If nothing else, deeper understanding of S3 abstractions will provide a pathway to finding more detailed documentation with `help()` on the functions you are actually using when calling abstract methods.
+For further exploration, note that calling `help("plot.default")` also yields far more detailed information about how to use the `plot()` function on vector arguments than `help("plot", package = "base")`. 
+
+`r indent()`
+For other examples of S3 functional abstractions, look at the implementation of the `print()` or `summary()` functions.
+See if you can find the specific implementations of these functions for particular data types that might be passed as the first argument to the abstraction (e.g., `print.default()` or `print.data.frame()`).
+While detailed knowledge of the benefits of these object-oriented principles of polymorphic classes is not strictly necessary to use R, deeper understanding of this topic will allow for more informed troubleshooting when a function does something unexpected.
+If nothing else, deeper understanding of S3 abstractions will provide a pathway to finding more detailed documentation with `help()` on the functions you are actually using when calling abstract methods.
+
+`r indent()`
+While it may be cryptic if you are new to R, a careful inspection of the code for `plot.default()` reveals the fundamental steps of building a graph.
+The function `plot.new()` moves to a new frame and prepares the corresponding canvas or part of a canvas for a new plot.
+The function `box()` (called by the local function `localBox()`) is used to create lines at the edges of the plot region to delineate it from the rest of the canvas.
+The function `plot.window()` (called by the local function `localWindow()`) creates the coordinate system for the canvas based on the location of the plot region.
+The function `Axis()` (called by the local function `localAxis()`) creates the axes symbols relative to the edges of the plot region.
+The function `plot.xy()` adds symbols to the plot region corresponding to the visualized data.
+Finally, the function `title()` (called by the local function `localTitle()`) adds the labels for the axes and graph.
+Constructing a graph directly using these functions is a way to override the assumptions `plot.default()` makes to allow quick construction of a graph, which opens the door to substantial creativity in figure construction.
 
 
 ```{r include = FALSE}
@@ -440,19 +647,234 @@ sec2 <- sec2 + 1
 
 hn <- paste0(sec1, ".", sec2)
 ```
-## `r hn`. Scaling the canvas
+## `r hn`. Creating the canvas and defining the plot region
 
-The coordinate system for the canvas must be defined before `plot.default()` can place any symbols on the canvas at desired locations. The coordinate system is established by first calling `plot.new()` to prepare the canvas for a new plot. Then, a call to `plot.window()` establishes the coordinate system.
+`r indent()`
+The  function `plot.new()` is responsible for establishing a new canvas.
+If previous graphing functions have been called on a given device, calls to `plot.new()` will also finalize graphing in the current frame and advance to the next frame.
+The context of advancing to a new frame depends on the device being used and if any of the automated methods for creating multi-panel figures are active.
+For example, if multi-panel tools are not activated and the pdf device is in use, calling `plot.new()` will start a new canvas on a new page in the pdf file, building pages in consecutive order.
+The multiple potential behaviors of advancing frames is difficult to list exhaustively, but is not difficult to understand with experimentation in a given device and multi-panel scenario.
 
-Scaling of the canvas is based on vectors passed to `xlim` and `ylim` arguments that define the coordinates associated with the boundaries of a rectangular plot region on the canvas (i.e. the area of the canvas where data is intended to be plotted). The effect of these functions can be explored by calling them directly with simplified arguments, consistent with examples provided above. Here, a box is drawn around the plot region and the outer edge of the canvas to aid with visualization of the basis for the coordinate system, though symbolism is not yet provided for visualization of the coordinate system numerics (see later materials on the ` Axis() ` function). The size of the margins around the plot region are defined by default graphic parameters that will be discussed in detail, later (e.g., see later materials introducing ` par("mar") `). As above, the Rmarkdown code chunk options are set to control the dimensions of the canvas being embedded in the compiled document, and all code chunks in the remainder of this section are configured the same way.
+`r indent()`
+In base R, the fundamental organization of the canvas is first determined by a rectangular subset of the canvas designated as the *plot region*.
+The area within this region is where symbols representing data are conventionally rendered, though ultimately the coordinate system based on this plot region extends across the entirety of the canvas.
+Symbols can technically be plotted anywhere, though they will only be visible if some part of them is within the coordinates defining the edges of the canvas.
+
+`r indent()`
+We can explore the basic construct of the canvas by calling `plot.new()` and then using the function `box()` to draw lines around both the edges of the canvas and the edges of the plot region.
+
+```{r canvas_basic}
+
+# Initialize a new canvas
+plot.new()
+
+# Draw a box around the plot region
+box()
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
 
 ```
- {r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+
+*Functions and arguments being used for the first time*
+
+- `plot.new()`: Moves to a new frame and prepares the corresponding canvas or part of a canvas for a new plot.
+- `box()`: Draws a box around predefined regions of a graphing canvas
+    - No arguments implies default argument values including `which = "plot"`, which results in a box drawn around the plot region.
+    
+`r indent()`
+A remaining mystery is why the plot region on the canvas above is in its current location.
+As of yet, we have provided no information about the desired location of the plot region, so R must be making an assumption and hopefully we can override that assumption to allow more creativity with graph construction.
+As it turns out, the location of the plot region is defined by a set of values for hierarchically nested outer and inner margins that together dictate the distance between the edges of the canvas and the edges of the plot region.
+For now, we will focus on scaling the canvas for a single graph, which means the outer and inner margins on each edge of the canvas are additive.
+In the case of a single graph (i.e., without multiple panels), the outer margins are often set to zero and the inner margins have sole control over the location of the edges of the plot region.
+To solve the mystery of the location of the values for these margins, we need to start diving into the topic of the global graphics parameters accessible via the `par()` function.
+
+`r indent()`
+Calling `par()` in the console will produce a exhaustive, and perhaps a bit cryptic, list of global graphics parameters and their current values.
+Calling `help("par")` will provide a detailed description of what each of the global graphics parameters controls, including the  `oma` or `omi` and `mar` or `mai` parameters that control the outer and inner margins.
+Rather than taking space in this document, you are encouraged to explore this list and its documentation on your own.
+
+`r indent()`
+Passing a collection of character strings to `par()` representing parameter names (i.e., parameter names in quotes) will allow you to view the current values of a select list of global graphics parameters.
+The default values for the outer margins of the default device in the following code chunk are...
+
+```{r canvas_parOuterMarginView}
+
+# Retrieve the current values of global graphics parameters
+par("oma", "omi")
+
 ```
 
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+*Functions and arguments being used for the first time*
 
-# Create exponential decay data
+- `par()`: Allows the values of graphical parameters associated with the current open graphics device to be retrieved or altered.
+    - `...`: To retrieve the current values of parameters, the `par()` function should be generically passed a collection of character strings representing parameter names
+        - `"oma"` or `"omi"`: Returns the current setting for the graphical parameter defining the outer margins. The return value will be a vector with 4 elements designating the bottom, left, top, and right margins, in that order. The parameter `oma` is in the relative units of *lines*, which are sized relative to the point size of the font being used in labels in the margin of the graph. The parameter `omi` is in absolute units of inches, which is independent of font size. If either of these parameter values is changed using the `par()` function, the other is automatically updated based on the font size being used.
+
+Nonzero outer margins are most useful for defining white space around multi-panel graphs, where the outer margins need to be differentiated from the inner margins of each panel (see `help("par")` for a visualization of the differences).
+The outer margins are generally redundant when not using automated multi-panel graphing features (e.g., by changing the `mfrow` or `mfcol` global parameter), and thus the outer margins often default to zero in newly created devices.
+
+`r indent()`
+The default values for the inner margins of the default device in the following code chunk are...
+
+```{r canvas_parInnerMarginView}
+
+# Retrieve the current values of global graphics parameters
+par("mar", "mai")
+
+```
+
+*Functions and arguments being used for the first time*
+
+- `par()`: Allows the values of graphical parameters associated with the current open graphics device to be retrieved or altered.
+    - `...`: To retrieve the current values of parameters, the `par()` function should be generically passed a collection of character strings representing parameter names
+        - `"mar"` or `"mai"`: Returns the current setting for the graphical parameter defining the inner margins for an individual graph. The return value will be a vector with 4 elements designating the bottom, left, top, and right margins, in that order. The parameter `mar` is in the relative units of *lines*, which are sized relative to the point size of the font being used in labels in the margin of the graph. The parameter `mai` is in absolute units of inches, which is independent of font size. If either of these parameter values is changed using the `par()` function, the other is automatically updated based on the font size being used.
+
+Do the values for `mai` (in inches) make sense relative to the location of the plot region from above?
+Note that the image may be rescaled in your html viewer such that the absolute length of the spaces is not in inches, but the relative size of the spaces should align with the relative magnitude of the values representing the bottom, left, top, and right margins.
+
+```{r canvas_basicMarginValueComparison, echo = FALSE}
+
+# Initialize a new canvas
+plot.new()
+
+# Draw a box around the plot region
+box()
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+`r indent()`
+With the outer margins at zero, the inner margins are the only control on the location of the plot region for a given canvas.
+Let's say we want to reduce the amount of white space outside the top and right edges of our plot region, because we do not anticipate those regions will require space for tick labels or axis labels outside the plot region.
+We can reduce that space by sending named arguments to the `par()` function with the name being the parameter name and the passed value being the value for that parameter.
+For example, `par(mai = c(1.02, 0.82, 0.25, 0.25))` should reduce the space on the top and right edges of the canvas to a quarter of an inch.
+The function `c()` in R is a quick way to combine a collection of values into a vector, in this case an numeric atomic vector.
+Let's try to change the inner margins and verify that it works by checking for the new values.
+We can check both `mar` and `mai` to verify that the margins in units of lines are updated automatically.
+
+```{r canvas_parMarginChange}
+
+# Reset the inner margins (in inches)
+par(mai = c(1.02, 0.82, 0.25, 0.25))
+
+# Retrieve the current values of global graphics parameters
+par("mar", "mai")
+
+```
+
+*Functions and arguments being used for the first time*
+
+- `c()`: A generic function for combining objects into vectors
+    - `...`: Arguments can be passed generically to `c()` without names. Unnamed arguments are combined into a vector without names attributes. Named arguments are combined into a vector with names attributes corresponding to the named arguments.
+        - `c(1.02, 0.82, 0.25, 0.25)`: Results in the four provided values being combined into a numeric atomic vector (without names).
+- `par()`: Allows the values of graphical parameters associated with the current open graphics device to be retrieved or altered.
+    - `mai`: Named argument to set the value of the `mai` global parameter
+        - `c(1.02, 0.82, 0.25, 0.25)`: Sets the graphics parameter for the margins based on a provided vector of four values (in inches) for the space between the edges of the canvas and the bottom, left, top, and right edges of the plot region. The function `c()` in R is a quick way to combine a collection of values into a vector, in this case an numeric atomic vector.
+    
+`r indent()`
+Let's see the effect of changing the margin parameter on the location of the plot region.
+Note that each code chunk in Rmarkdown has it's own default graphics device, so the following chunk will not remember changes in graphics parameters from the previous chunk.
+Another call to `par()` is necessary to change the margin parameter for the default graphics device within the following chunk.
+
+```{r canvas_changeMargins}
+
+# Initialize a new canvas
+plot.new()
+
+# Reset the inner margins (in inches)
+par(mai = c(1.02, 0.82, 0.25, 0.25))
+
+# Draw a box around the plot region
+box()
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```    
+
+Here is the plot with the original `mai` settings of `r par("mai") ` for comparison...
+
+```{r canvas_basicCompareMargins, echo = FALSE}
+
+# Initialize a new canvas
+plot.new()
+
+# Draw a box around the plot region
+box()
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+`r indent()`
+This exercise with graphics parameters should provide you with the tools you need to experiment with values for the margins to be sure you understand how the graphics device responds.
+Controls over the margins should be understood completely before moving on, because the nature of the coordinate system for the canvas established by `plot.window()` depends entirely on the locations of the edges of the plot region.
+You can experiment with the behavior of outer margins as well, though you will not likely find these useful until working with automated tools for multi-panel figures.
+
+`r indent()`
+The ability to start a new plot region on the canvas anywhere you please also allows you to create multi-panel plots without using the automated tools.
+Immense creativity in organizing the canvas arises from the fact that there are no limits to the number of times the margins can be reset on the same canvas.
+Does the behavior of the following code make sense based on your understanding of the ability to set or reset margins on the same canvas?
+Do you see why adding 2.5 inches to either the lower or upper margin makes white space for another plot region on a 5 inch high canvas?
+
+```{r canvas_multipanel}
+
+# Initialize a new canvas
+plot.new()
+
+# Reset the inner margins (in inches)
+par(mai = c(2.5 + 1.02, 0.82, 0.25, 0.25))
+
+# Draw a box around the plot region
+box()
+
+# Reset the inner margins (in inches)
+par(mai = c(1.02, 0.82, 2.5 + 0.25, 0.25))
+
+# Draw a box around the plot region
+box()
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+
+```{r include = FALSE}
+sec2 <- sec2 + 1
+
+hn <- paste0(sec1, ".", sec2)
+```
+## `r hn`. Specifying the coordinate system
+
+`r indent()`
+The coordinate system for the canvas must be defined before `plot.default()` can place any symbols on the canvas at desired locations.
+The  function `plot.window()` is responsible for defining the coordinate system, which is defined based on assigning coordinate values to the two vertical edges and two horizontal edges of the rectangular plot region.
+These coordinates have no influence on the location of the plot region on the canvas, because that location is defined by the values for the inner and outer margins (see above).
+
+`r indent()`
+The arguments passed to the `plot.window()` function to assign the vertical and horizontal coordinates of the plot region are `xlim` and `ylim`.
+The `xlim` argument is expecting a vector of two values defining the coordinates for the left and right edges of the plot region along the abscissa (a.k.a. the x axis).
+The `ylim` argument is expecting a vector of two values defining the coordinates for the bottom and top edges of the plot region along the ordinate (a.k.a. the y axis).
+After defining the coordinates for the edges of the plot region, any other location on the canvas can be located using a scale for each of the x and y axes inferred from these values.
+These inferred scales are typically either arithmetic or logarithmic in nature.
+Substantial potential for creativity arises from the fact that the same plot region on a given canvas can be rescaled an unlimited number of times simply by calling the `plot.window()` function again without changing the margins.
+
+`r indent()`
+Let's use the chemical reactor exponential decay curve as the basis for scaling a canvas appropriate for plotting the data.
+After defining the reactor data, we need to calculate the extremes of the x (time) an y (concentration) values to make sure the assigned coordinates of our plot region will allow all the data to be displayed.
+The functions `min()` and `max()` are useful for calculating minimum and maximum summary statistics of vectors.
+Based on these extremes, we have the information needed for the `xlim` and `ylim` arguments to the `plot.window()` function. 
+
+```{r coord_basic}
+
+# Define chemical reaction data
 react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
 react$C <- 5 * exp(-0.5 * react$t)
 
@@ -464,6 +886,9 @@ ymax <- max(react$C)
 
 # Initialize a new canvas
 plot.new()
+
+# Reset the inner margins (in inches)
+par(mai = c(1.02, 0.82, 0.25, 0.25))
 
 # Scale the canvas 
 plot.window(
@@ -479,385 +904,104 @@ box(which = "outer")
 
 ```
 
-Description of functions and arguments being used for the first time:
+*Functions and arguments being used for the first time*
 
-- ` plot.new() `: Prepares the device canvas for a new plot
-- ` plot.window() `: Scales the canvas, providing an orthogonal 2-dimensional coordinate system (x is horizontal and y is vertical) for locating graphical objects placed on the canvas by later calls to graphing functions.
-    - ` xlim `: Numerical vector with 2 elements specifying the leftmost and rightmost values to be used in the graphing area of the coordinate system
-    - ` ylim `: Numerical vector with 2 elements specifying the bottommost and topmost values to be used in the graphing area of the coordinate system
-- ` box() `: Draws a box around predefined regions of a graphing canvas
-    - No arguments implies the default ` which = "plot" `, which results in a box drawn around the plot region.
+- `min()`: Calculates the minimum value summary statistic of a collection of values
+    - `...`: The min() function accepts collections of generic arguments without names, representing the objects to be assessed for minimum values
+        - `react$t` or `react$C`: Causes the function to return the minimum of the time or concentration column
+- `max()`: Calculates the maximum value summary statistic of a collection of values
+    - `...`: The min() function accepts collections of generic arguments without names, representing the objects to be assessed for minimum values
+        - `react$t` or `react$C`: Causes the function to return the maximum of the time or concentration column
+- `plot.window()`: Scales the canvas, providing an orthogonal 2-dimensional coordinate system (x is horizontal and y is vertical) for locating graphical objects placed on the canvas by later calls to graphing functions.
+    - `xlim`: Numerical vector with 2 elements specifying the coordinate values associated with the left and right edges of the plot region
+        - `c(xmin, xmax)`: The `c()` function creates the simplest vector possible from the collection of values passed to it. This results in an numeric atomic vector with two values equaling `xmin` and `xmax` to be used as the coordinates of the left and right extremes of the plot region.
+    - `ylim`: Numerical vector with 2 elements specifying the coordinate values associated with the bottom and top edges of the plot region
+        - `c(ymin, ymax)`: The `c()` function creates the simplest vector possible from the collection of values passed to it. This results in an numeric atomic vector with two values equaling `ymin` and `ymax` to be used as the coordinates of the bottom and top extremes of the plot region.
 
-The results are not particularly exciting. The fact that we have established a coordinate system does not result in any graphical elements being added to the canvas. The boxes aiding in visualization had to be added manually. However, this code has provided a spatially rectified blank slate, such that there is now a context for adding graphical elements at the exact coordinates desired.
+The results are not particularly exciting.
+The fact that we have established a coordinate system does not result in any graphical elements being added to the canvas.
+The boxes aid in visualization of the plot region, but are unchanged by decisions about the scaling of the coordinate system.
 
+`r indent()`
+Fortunately, the `Axis()` or `axis()` functions provide a simple tool that will allow visualization of the coordinate system we just created.
+Like `plot()`, `Axis()` is an object oriented S3 abstraction.
+The function that actually does the work of building an axis depends on the types of the values passed to the `x` or `at` arguments of `Axis()`.
+We are going to use the `axis()` function (function names are case-sensitive), which is typically the function that does the work of building conventional numeric axes.
+While using either `Axis()` or `axis()` will work in the following examples, you will find that `help("axis")` provides much more detailed information about the potential to customize a numeric axis.
+Customization of axes will be a topic for later discussion, and for now we will only be using the argument `side` to specify which side of the plot region should be labeled with an axis scale.
 
-## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Plotting the data
+`r indent()`
+Let's replace the box around the plot region with a scale on the x and y axes to reveal the consequences of establishing a coordinate system.
+Specifying only the `side` argument for the `axis()` function will result in default behavior, where the graphing functions will automatically find a tick spacing and labeling scheme that is logical and avoids any visual overlap of symbols or labels.
 
-Graphics objects can now be added to the canvas in layers. Lower layers will still be visible, unless opaque elements are added on top of them. The ` plot.default() ` function plots the data as the first visible element of the figure, using the function ` plot.xy() `. The first argument (` xy `) is expected to be a list of vectors characterizing the coordinates to be plotted. This list can be conveniently constructed using the ` xy.coords() ` function with arguments specifying the x and y coordinates for a number of points to be plotted. The points plotted here are at coordinates 0, 0 and 1, 1. Multiple arguments are available to adjust the symbolism of each data point, but symbols will be black open circles if those arguments are not specified.
+```{r coord_axes}
 
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
 
-# Initialize a new canvas
-plot.new()
-
-# Scale the canvas 
-plot.window(
-  xlim = c(0, 1),
-  ylim = c(0, 1)
-)
-
-# Draw a box around the plot region
-box()
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-# Plot example data points
-plot.xy(
-  xy = xy.coords(
-    x = c(0, 1),
-    y = c(0, 1)
-  ),
-  type = "p"
-)
-
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` plot.xy() `: Renders the symbolism of a bivariate scatter plot on the canvas
-    - ` xy `: An coordinate list specifying information about the x an y coordinates of a set of data to be plotted.
-        - ` xy.coords(...) `: A function returning the list of x and y coordinates for the data set to be plotted (see below)
-    - ` type `: The character string code for the type of scatter plot to render
-        - ` "p" `: Results in data being plotted as point symbols in the scatter plot
-- ` xy.coords() `: Creates a coordinate list for a bivariate data set to be plotted
-    - ` x `: Numerical vector of values for the x coordinate of each data point graphed
-        - ` c(0, 1) `: Two data points with x coordinates of 0 and 1, respectively.
-    - ` y `: Numerical vector of values for the y coordinate of each data point graphed
-        - ` c(0, 1) `: Two data points with y coordinates of 0 and 1, respectively.
-
-The result is two points on the graph, exactly as would be expected by two points plotted within the domain defined in ` plot.window() `. The box around the plot region provides a hint of the layout of the coordinate system in relation to the plotted values at x = 0, y = 0 and x = 1, y = 1, but further numeric symbolism around the plot region is required to directly read values from the graph.
-
-
-## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Creating the axes
-
-The ` Axis() ` function provides a tool for adding axes describing the scale of the canvas in the area where the data are being plotted. This function is highly configurable to make an axis with ticks and labels exactly where desired, but the default arguments will attempt to create ticks and labels that are reasonably legible. Here, the only argument provided is the side of the graph where the axis should be located (1 is the bottom and 2 is the left). Note that the box around the plot region has been omitted to provide a clear view of the symbolism generated by the ` Axis() ` function.
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+# Determine the limits of the data
+xmin <- min(react$t)
+xmax <- max(react$t)
+ymin <- min(react$C)
+ymax <- max(react$C)
 
 # Initialize a new canvas
 plot.new()
 
-# Scale the canvas 
-plot.window(
-  xlim = c(0, 1),
-  ylim = c(0, 1)
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-# Plot example data points
-plot.xy(
-  xy = xy.coords(
-    x = c(0, 1),
-    y = c(0, 1)
-  ),
-  type = "p"
-)
-
-# Add an x axis
-Axis(side = 1)
-
-# Add a y axis
-Axis(side = 2)
-
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` Axis() `: Renders the symbolism of an axis with labeled ticks
-    - ` side `: An integer specifying the side of the plotting area upon which to place the axis (1 = bottom, 2 = left, 3 = top, 4 = right)
-        - ` 1 ` or ` 2 `: Call with 1 creates the x axis and call with 2 creates the y axis
-
-The axes clearly label the scaling of the canvas in the plot region, where an automated algorithm has determined aesthetically pleasing tick intervals and tick labels. The consistency of the scaling established by ` plot.window() ` is now evident, in that the data points plotted earlier line up with the appropriate ticks on the axes. These are the fundamentals of building any graph on the canvas.
-
-
-## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Labeling the axes
-
-The ` title() ` function is a unified tool for labeling different parts of the graph. Most style guides for figures suggest that the area where data are plotted should be differentiated from the rest of the figure. The ` box() ` function with no arguments is reintroduced here to clearly delineate the plot region from the rest of the canvas. The box overlaps with the axes lines, such that the axes are effectively only providing the ticks and tick labels. As with previous graphics tools, the location and symbolism used for the elements being added are highly configurable with additional arguments. However, the default arguments are used for now, and detail on arguments that are commonly altered from the defaults are discussed later.
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Initialize a new canvas
-plot.new()
+# Reset the inner margins (in inches)
+par(mai = c(1.02, 0.82, 0.25, 0.25))
 
 # Scale the canvas 
 plot.window(
-  xlim = c(0, 1),
-  ylim = c(0, 1)
+  xlim = c(xmin, xmax),
+  ylim = c(ymin, ymax)
 )
 
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-# Plot example data points
-plot.xy(
-  xy = xy.coords(
-    x = c(0, 1),
-    y = c(0, 1)
-  ),
-  type = "p"
-)
-
-# Add an x axis
-Axis(side = 1)
-
-# Add a y axis
-Axis(side = 2)
-
-# Draw a box around the plot region
-box()
-
-# Add axis labels
-title(
-  xlab = "x",
-  ylab = "y"
-)
-
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` title() `: Renders the symbolism of labels on various elements of a graphing canvas
-    - ` xlab `: A character string (or expression) specifying the label for the x axis
-        - ` "x" `: Results in the x axis being labeled with an "x"
-    - ` ylab `: A character string (or expression) specifying the label for the y axis
-        - ` "y" `: Results in the y axis being labeled with a "y"
-
-
-## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Summary
-
-This dissection of `plot.default() ` clearly requires substantially more lines of code than the original example of a single call to ` plot() ` that generates exactly the same figure. The point here is not that you should avoid using ` plot() ` and subsequently ` plot.default() `, because it clearly provides substantial convenience for basic plotting. The point is that your ability to debug and be creative with graphing code will expand if you understand how functions like ` plot.default() ` construct a graph, such that you can take advantage of the power of altering the arguments for each component of the graph should it be necessary to do something ` plot.default() ` does not allow. Furthermore, understanding of these details allows for much more informed troubleshooting should high level functions like ` plot.default() ` produce something unexpected in a given application.
-
-
-# `r sec1 <- sec1 + 1; sec2 <- 0; sec1`. The default values controlling graphical behavior
-
-A revisit of the code and result for the basic figure introduced earlier reveals that the ` plot() ` function must be making several assumptions about the desired format of the plot. 
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Plot example data points
-plot(
-  x = c(0, 1),
-  xlab = "x",
-  y = c(0, 1),
-  ylab = "y"
-)
+# Add scales to the x and y axes
+axis(side = 1)
+axis(side = 2)
 
 # Draw a box around the outer edge of the canvas
 box(which = "outer")
 
 ```
 
-Note that many aesthetic or technical aspects of this plot did not have to be defined in the code, including (but not limited to): the use of point symbols rather than lines; the shape and color of the points; the thickness of boxes and axes lines; and the location of the axes relative to the edges of the canvas. However, computers are generally not able to guess at what these aspects of plots should look like, so default information about the aesthetic or technical appearance of graphs must exist somewhere in the underlying R data structures. An important trick to full control over figures is to understand where that information is stored, how it is used, and how to change it. Understanding how to query or configure the graphical parameters opens the door to understanding the behavior of both high and low level graphical functions. The combination of arguments passed to these functions and the current value of the global graphical parameters are what allow explicit control over the scaling, formatting, symbolism, and labeling used in base R graphics. In other words, they are the key to knowing how to place any symbol the computer can generate at any desired location on the canvas. 
+*Functions and arguments being used for the first time*
 
-While working through this section, frequent reference to the base R documentation using ` help("par") ` or calling ` help() ` on the graphing functions is recommended to convince yourself you understand the consequences of using various graphical arguments or changing graphics parameters. As always, experimentation is highly encouraged.
-
-
-## `r sec1`.`r sec2 <- sec2 + 1; sec3 <- 0; sec2`. Default values for arguments to graphical functions
-
-A common location for default graphical information is the definition of default values for the arguments to graphical functions. For example, the ` plot.default() `function (e.g., what is called if using ` plot() ` on vectors) accepts the optional argument ` type ` that controls the type of symbolism used for the data in the graph. The values that can be passed to ` type ` to control the symbolism are documented in the package containing the function and in this case can be accessed using the  ` help("plot.default") `. The potential values for arguments are usually described in either the **Arguments** section or **Details** section of the function documentation. Any default value defined for a parameter is usually described in the **Usage** or **Arguments** section. A quick and succinct way to view the definition of a function's arguments is to use the ` args() ` function (e.g., ` args(plot.default) `).
-
-```{r}
-# Display the definition of arguments 
-#   for the function plot.default
-args(name = plot.default)
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` args() `: Returns the argument definitions for a function. Return type is a function with the argument definition but a NULL code block.
-    - ` name `: The name of the function for which the argument definition is retrieved
-        - ` plot.default `: Causes the function to return the argument definitions for the function ` plot.default() `
-
-Note that the argument ` type ` is followed by the assignment ` = "p" `, which designates that it will take on the value of the character string ` "p" ` if a value for that argument is not provided in a given call to the function. Any differing value provided for ` type ` in a call to the function will replace the default value and thus change the symbolism in the plot. For example, passing the value ` "o" ` to the argument ` type ` will result in an overlay of both points and lines.
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Plot example data points with lines
-plot(
-  x = c(0, 1),
-  xlab = "x",
-  y = c(0, 1),
-  ylab = "y",
-  type = "o"
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` plot() ` or ` plot.default() `: A high level function for creating a new plot with a single line of code
-    - ` type ` : A character string that defines the symbolism used when plotting data. For example, a value of "p" denotes points, "l" denotes lines, and "o" denotes an overlay of points and lines (among others). Note that the argument ` type ` is passed to plot generically here and ultimately this argument is not used specifically until it is passed to the ` plot.xy() ` function by ` plot.default() `.
-        - ` "o" `: Results in graphing data as an overlay of points and lines
-
-
-## `r sec1`.`r sec2 <- sec2 + 1; sec3 <- 0; sec2`. Retrieving and adjusting values of graphical parameters
-
-Extensive information used to plot graphical elements is also stored in a collection of default values for common graphical parameters associated with the open device. The current default values for these graphical parameters can be accessed by passing the names of those parameters as arguments to the ` par() ` function. For example, the graphics parameter that determines the symbols used for data points is ` pch `, so the current value of "pch" can viewed with...
-
-```{r}
-# Display the value of the graphical parameter pch 
-#   for the current graphics device
-par("pch")
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` par() `: Allows the values of graphical parameters associated with the current open graphics device to be retrieved or altered. Calling ` par() ` with no arguments will provide the full list of available graphics parameters.
-    - ` ... `: The ellipses in the definition of arguments to a function indicate that the function will accept any number of generic arguments when called. "Generic" means that the function will either interpret the comma-delimited generic collection of elements without explicit definition of argument names, or it means that any generic arguments provided will be passed generically to other functions called when the function's code is executed. Use of ellipses in graphical functions is a very common practice for passing values for graphical parameters generically from higher level functions to lower level functions.
-        - ` "pch" `: Passing the character string "pch" as a generic argument to ` par() ` results in a return value of the current default value of the correspondingly named graphical parameter. Note that multiple parameter names can be provided in a comma delimited list of character strings, which will return a named list of values with each element providing the current default value for each graphical parameter provided. For example ` par("pch", "lty") ` will return the current default values for the point type and line type graphical parameters.
-
-By default, ` pch ` typically has a value of 1, which specifies an open circle, hence the symbols plotted in the graphs so far have all been open circles. The par function can also be used to change the values of graphical parameters based on a collection of ` <parameter> = <value> `  in the argument to the function call. Thus, the default symbol can be changed to an open triangle by changing the value of the graphics parameter ` pch ` to 2.
-
-```{r}
-# Change the value of the graphical parameter pch 
-#   for the current graphics device
-par(pch = 2)
-
-# Display the value of the graphical parameter pch 
-#   for the current graphics device
-par("pch")
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` par() `: Allows the values of graphical parameters associated with the current open graphics device to be retrieved or altered.
-    - ` pch = 2 `: Passing a named value to the generic arguments in ` par() ` will result in the default value for the named graphical parameter to be changed to the provided value. Setting the graphical parameter ` pch ` to 2 will result in data being represented by open triangles.
-
-Changing the value of a graphical parameter with ` par() ` will change the default value within the open graphics device for all subsequent calls to graphical functions, until the device is closed or reset. If we add an additional plot to the basic graph, it will also use the new setting of the graphical parameter ` pch `.
-
-The effect of this change can be demonstrated by calling two different graphing functions that plot data points in sequence. The understanding gained from dissecting the ` plot() ` function provides one method for adding an additional plot to the same basic graph, putting points in the unused corners of the basic graph using the ` plot.xy() ` function.
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Change the value of the graphical parameter pch
-par(pch = 2)
-
-# Plot example data points
-plot(
-  x = c(0, 1),
-  xlab = "x",
-  y = c(0, 1),
-  ylab = "y",
-  type = "o"
-)
-
-# Plot example data points
-plot.xy(
-  xy = xy.coords(
-    x = c(0, 1),
-    y = c(1, 0)
-  ),
-  type = "p"
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-All the data points are open triangles, demonstrating how changing the ` pch ` graphical parameter with ` par() ` altered the value for all subsequent calls to graphics functions within the code chunk. Note that in Rmarkdown, each code chunk will open a separate graphics device, such that any changes to graphics parameters applied to the device in one code chunk will not propagate to other code chunks without further action.
-
-The main reason that graphics parameters controlled by ` par() ` have influence with subsequent graphing code is that they often represent the default values for arguments to lower level graphing functions. Therefore, the default values of the graphics parameters can often be locally overridden using values passed directly to those arguments. For example, consider the default value for the ` pch ` parameter in the list of arguments to the ` plot.xy() ` function.
-
-```{r}
-args(plot.xy)
-```
-
-The default value for the ` pch ` argument comes directly from the graphical parameters via a call to ` par("pch") `. Therefore, the value for the graphing parameter that would normally result in triangle symbols from the previous example can be overridden for the call to ` plot.xy() ` by directly setting a value for the ` pch ` argument.
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Change the value of the graphical parameter pch
-par(pch = 2)
-
-# Plot example data points
-plot(
-  x = c(0, 1),
-  xlab = "x",
-  y = c(0, 1),
-  ylab = "y",
-  type = "o"
-)
-
-# Plot example data points
-plot.xy(
-  xy = xy.coords(
-    x = c(0, 1),
-    y = c(1, 0)
-  ),
-  type = "p",
-  pch = 0
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` plot.xy() `: Renders the symbolism of a bivariate scatter plot on the canvas
-    - ` pch `: A vector of integers or characters specifying the symbol to use for data points.
-        - ` 0 `: An integer value of zero specifies an open square symbol
+- `axis()`: Renders the symbolism of an axis with labeled ticks
+    - `side`: An integer specifying the side of the plot region upon which to place the axis (1 = bottom, 2 = left, 3 = top, 4 = right)
+        - `1` or `2`: Call with 1 creates the x axis symbols and call with 2 creates the y axis symbols
         
-In this case, the value of the graphical parameter ` pch ` is ignored in place of the value directly passed to the ` pch ` argument of the ` plot.xy() ` function, hence the squares in the second plot rather than the triangles.
+These scales should make sense relative to the calculations of minima an maxima from the chemical reaction data.
+The measurements were taken from 0 to 10 minutes, so the x axis scale for the plotting region should span those values.
+The initial concentration was $\mathrm{5 \ mmol \ L^{-1}}$ and was allowed to progress until only very small values were remaining, so the y axis should span from approximately zero to five.
 
+`r indent()`
+At this point, we need to remember that dissection of functions like `plot()` is useful for learning the details you might need to be more creative or to troubleshoot more quickly.
+However, that does not mean that figures need always be generated at this level of functional granularity when higher level functions like `plot()` will provide the flexibility you need based on the arguments passed to it.
+Recall that many arguments passed to `plot()` will be subsequently passed to the functions we have been discussing, ultimately achieving the exact same goals with the same lower level functions.
+Here is an example of using the `plot()` function and some of its arguments we have not yet discussed to generate the same graph as the previous example.
+We can remove several lines of code and arguments because the default behavior of `plot()` without those arguments is the same as several decisions we have made about how to define the coordinate system and how to show the axes.
 
-# `r sec1 <- sec1 + 1; sec2 <- 0; sec1`. Scaling the canvas
+```{r coord_usePlot}
 
-In base R, the scaling of the coordinate system for a device canvas is defined in the context of a rectangular subset of the canvas designated as a *plot region*. This region defines the area within which symbols representing data are conventionally rendered, though the scale extends across the entirety of the canvas and symbols can technically be plotted anywhere, if desired. The scaling function ` plot.window() ` is responsible for establishing the coordinate system to be used by later calls to graphics functions. Derivation of the coordinate system is based on the margins between the plot region and the edge of the canvas, the limits of the x and y coordinates that define the edges of the plot region, and parameters that control buffering of the symbols within the plot regions from the edges of the plot region. Therefore, taking full control of scaling requires understanding the graphical parameters and function arguments that control the behavior of ` plot.window() ` in performing these derivations.
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
 
+# Reset the inner margins (in inches)
+par(mai = c(1.02, 0.82, 0.25, 0.25))
 
-## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Defining a plot region for a single graph
-
-The location of the plot region is defined by a set of nested outer and inner margins that together dictate the distance between the edges of the canvas and the bottom, left, top, and right edges of the plot region. For now, we will focus on scaling the canvas for a single graph, which means the outer and inner margins are simply additive. In this case, the outer margins are often set to zero (hence their default value) and the inner margins are thus given sole control over the location of the edges of the plot region. See ` help("par") ` and the documentation for graphical parameters ` oma ` / ` omi ` and ` mar ` / ` mai ` for visualizations of the margin structure. We will revisit the utility of nonzero outer margins when discussing multi-panel graphs. 
-
-Depending on units used, the values for the outer margins can be retrieved or set with the graphical parameters ` oma ` or ` omi `, such that we can confirm their default value of zero with the following code.
-
-```{r}
-par("oma", "omi")
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` par() `: Allows the values of graphical parameters associated with the current open graphics device to be retrieved or altered.
-    - ` "oma" ` or ` "omi" `: Returns the current setting for the graphical parameter defining the outer margins. The return value will be a vector with 4 elements designating the bottom, left, top, and right margins, in that order.
-
-With outer margins defaulting to zero, the scaling for the basic plots we have examined so far has been determined exclusively by the inner margins, or the distance from the edges of the plot region to the inside of the outer margin (which is the edge of the canvas when outer margins are set to zero).
-
-```{r}
-par("mar", "mai")
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` par() `: Allows the values of graphical parameters associated with the current open graphics device to be retrieved or altered.
-    - ` "mar" ` or ` "mai" `: Returns the current setting for the graphical parameter defining the default margins for an individual graph. The return value will be a vector with 4 elements designating the bottom, left, top, and right margins, in that order. The parameter ` mar ` is in the relative units of *lines*, which are sized relative to the point size of the font being used in labels in the margin of the graph.  The parameter ` mai ` is in absolute units of inches, which is independent of font size. If either of these parameter values is changed using the ` par() ` function, the other is automatically updated based on the font size being used.
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Plot example data points
+# Create the canvas, define the coordinate system, suppress plotting of data,
+#   suppress axis labels, and suppress the box around the plot region
 plot(
-  x = c(0, 1),
-  xlab = "x",
-  y = c(0, 1),
-  ylab = "y"
+  x = react$t,
+  xlab = "",
+  y = react$C,
+  ylab = "",
+  type = "n",
+  frame.plot = FALSE
 )
 
 # Draw a box around the outer edge of the canvas
@@ -865,234 +1009,325 @@ box(which = "outer")
 
 ```
 
-The extra white space visible at the top and right of this basic plot is thus determined by the default values for the third and fourth elements of ` mar ` or ` mai `. Full control and consistency of the margins and subsequent scaling of the canvas can be gained by setting these graphical parameters explicitly with ` par() ` before using the graphical functions that reference them. For example, we can reduce the extra white space at the top and right sides of the graph by reducing the sizes of the margin defined in the third and fourth elements of ` mai `.
+*Functions and arguments being used for the first time*
 
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+- `plot()`: An abstract convenience function for creating a plot with default properties very quickly
+    - `xlab`: A character string or R expression with the label for the x axis
+        - `""`: Empty string resulting in no label
+    - `ylab`: A character string or R expression with the label for the y axis
+        - `""`: Empty string resulting in no label
+    - `type`: The type of plot to generate
+        - `"n"`: Passing the character "n" to `type` tells `plot()` to create the canvas, coordinate system, and axes, but not to plot any data. The data provided to the `x` and `y` parameters are still used to determine the coordinate system.
+    - `frame.plot`: Switch controlling whether a box is drawn around the plot region
+        - `FALSE`: Logical false setting results in the box not being drawn
+        
+Once you are comfortable with your understanding of the lower level functions being applied by higher level functions like `plot()`, you will find it second nature to bounce back and forth between using the higher or lower level functions, depending on your stylistic preference or the level of creativity needed.
 
-# Define margins leaving room for axes on the bottom and left sides
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.2)
-)
+`r indent()`
+You may note from these scales that the point (0, 0) is not directly on the corner of the plot region.
+To ensure all the data points will be visible, `plot.window()` adds a 4% buffer to the coordinates assigned to the edges of the plot region relative to the extreme's specified in the `xlim` and `ylim` vectors.
+The actual coordinates of the edges of the plot region may be calculated as follows for an arithmetic scale, where the 1 and 2 subscripts denote the first and second elements of the xlim and ylim vectors.
 
-# Plot example data points
-plot(
-  x = c(0, 1),
-  xlab = "x",
-  y = c(0, 1),
-  ylab = "y"
-)
+$$
+x_{left} = xlim_{1} - 0.04 (xlim_{2} - xlim_{1}) 
+~~~~~~~~
+x_{right} = xlim_{2} + 0.04 (xlim_{2} - xlim_{1})
+$$
 
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
+$$
+y_{bottom} = ylim_{1} - 0.04 (ylim_{2} - ylim_{1})
+~~~~~~~~
+y_{top} = ylim_{2} + 0.04 (ylim_{2} - ylim_{1})
+$$
 
-```
+`r indent()`
+The application of buffering in determining the scaling from `xlim` and `ylim` is controlled by the type of axis designated by the `xaxs` and `yaxs` global graphics parameters.
 
-Experiment with values for the margins to be sure you understand their behavior. For example, recognize the potentially confusing behavior that labels might be cut off if the scaling dictates they fall outside the canvas. Understanding behavior of margins will prevent going down the incorrect troubleshooting path of assuming the axis labels are not being generated in the following graph. They are being generated, just outside the canvas that is in view.
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Define margins without leaving room for axes labels 
-#   on the bottom and left sides
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.6, 0.6, 0.2, 0.2)
-)
-
-# Plot example data points
-plot(
-  x = c(0, 1),
-  xlab = "x",
-  y = c(0, 1),
-  ylab = "y"
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-Not that R graphics will not warn you that components of your graph are not visible because they are being plotted outside the limits of the device canvas.
-
-
-## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Defining a coordinate system for a plot region
-
-Once margins are established, the derivation of the coordinate system for the canvas is subsequently controlled by the limits of the plot regions established by the ` xlim ` and ` ylim ` arguments to ` plot.window() `. Unless otherwise specified, the values of ` xlim ` and ` ylim ` will be determined by the associated minimum and maximum values in the vectors begin plotted. This default behavior will be overridden if explicit values for ` xlim ` and ` ylim ` are somehow passed to ` plot.window() ` when scaling the canvas. For example, passing ` xlim ` and ` ylim ` values to the generic ` plot() ` function will result in these values being passed to ` plot.window() ` via a call to ` plot.default() `.
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Define margins leaving room for axes 
-#   on the bottom and left sides
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.2)
-)
-
-# Plot example data points
-plot(
-  x = c(0, 1),
-  xlim = c(-1, 2),
-  xlab = "x",
-  y = c(0, 1),
-  ylim = c(-1, 2),
-  ylab = "y"
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` plot() ` or ` plot.default() ` : A high level function for creating a new plot with a single line of code. The function ` plot() ` is an S3 abstraction, which in this case results in a call to ` plot.default() `.
-    - ` xlim `: Numerical vector with 2 elements specifying the leftmost and rightmost values to be used in the graphing area of the coordinate system
-    - ` ylim `: Numerical vector with 2 elements specifying the bottommost and topmost values to be used in the graphing area of the coordinate system
-
-The effect of changing these arguments on scaling the canvas can be demonstrated by altering the call to ` plot.window() ` directly.
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Define margins leaving room for axes 
-#   on the bottom and left sides
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.2)
-)
-
-# Initialize a new canvas
-plot.new()
-
-# Scale the canvas 
-plot.window(
-  xlim = c(-1, 2),
-  ylim = c(-1, 2)
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-# Plot example data points
-plot.xy(
-  xy = xy.coords(
-    x = c(0, 1),
-    y = c(0, 1)
-  ),
-  type = "p"
-)
-
-# Add an x axis
-Axis(side = 1)
-
-# Add a y axis
-Axis(side = 2)
-
-# Draw a box around the plot region
-box()
-
-# Add axis labels
-title(
-  xlab = "x",
-  ylab = "y"
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-Note that order of the magnitude of the limits in either the x or y direction is arbitrary. The example above follows the common convention that values increase in magnitude with movement upward in y space and that values increase in magnitude with movement to the right in x space. Reversing this convention in derived the coordinate system simply requires reversing the definition of the values of the limits associated with the bounds of the plot region. For example, the following will invert the y axis from previous examples by setting the y value associated with the bottom of the plot region to 1 and the y value associated with the top of the plot region to 0.
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Define margins leaving room for axes on the
-#   bottom and left sides
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.2)
-)
-
-# Plot example data points
-plot(
-  x = c(0, 1),
-  xlab = "x",
-  y = c(0, 1),
-  ylim = c(1, 0),
-  ylab = "y"
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-The numerical distribution used to represent the coordinate system for either axis can also be altered to a base-10 logarithmic scale. A logarithmic number system can be specified by a passing a value for the ` log ` argument generically to ` plot() ` or directly to ` plot.window() ` where the argument ultimately takes effect. The value for this argument can be the character string "x" or "y" to specify a log scale on only one of the axes, or the character string "xy" to specify a log scale on both axes. For example, the x scaling can be altered to be on a log scale with x coordinate values at 0.1 and 1 as follows (values of zero cannot be plotted in log space).
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Define margins leaving room for axes on the
-#   bottom and left sides
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.2)
-)
-
-# Plot example data points
-plot(
-  x = c(0.1, 1),
-  xlab = "x",
-  y = c(0, 1),
-  ylab = "y",
-  log = "x"
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` plot() ` or ` plot.default() `: A high level function for creating a new plot with a single line of code. The function ` plot() ` is an S3 abstraction, which in this case results in a call to ` plot.default() `.
-    - ` log `: A character string specifying which axes should be in log space. The value "x" or "y" specifies one of the axes is in log space, and the value of "xy" specifies that both axes are in log space. Note that this argument is passed to ` plot() ` generically, and its effect on scaling is not realized until ` plot.default() ` ultimately passes the value assigned to ` log ` on to ` plot.window() `.
-        - ` "x" `: Specifies that the x axis should be scaled in log space
-
-
-## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Customizing the internal buffers within a plot region
-
-In the basic plot used as a frequent example, note the extra internal space between the edges of the plot region and the minima of 0 and the maxima of 1 defining the default limits of the plot region. 
-
-This default buffering (which is derived from 4% of the difference between the maximum and minimum of the limits) influenced the overall scaling of the canvas and is controlled by the axis type. The axis types are configurable with the ` xaxs ` and ` yaxs ` graphics parameters.
-
-```{r}
+```{r coord_parViewAxisTypes}
 par("xaxs", "yaxs")
 ```
 
-Description of functions and arguments being used for the first time:
+Most devices have parameter `xaxs` and `yaxs` set to "r" by default (which stands for "regular") and "regular" behavior is to add a 4% buffer around the data extremes specified.
+Setting these parameters to "i" will force the coordinates of the edges of the plot region to align directly with the values provided in `xlim` and `ylim`.
+Also, let's reintroduce the box around the plot region, allowing us to see its full delineation an alignment with the axes scales.
 
-- ` par() `: Allows the values of graphical parameters associated with the current open graphics device to be retrieved or altered.
-    - ` "xaxs" ` or ` "yaxs" `: Returns the current setting for the graphical parameter defining the type of the x or y axes. By default, values are the character string "r" indicated a "regular" scaling (includes a 4% buffer around the limits of the plot region).
+```{r coord_nobuffer}
 
-The default types for the axes can be specified generally for the device using the ` par() ` function.
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
 
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+# Determine the limits of the data
+xmin <- min(react$t)
+xmax <- max(react$t)
+ymin <- min(react$C)
+ymax <- max(react$C)
 
-# Define margins leaving room for axes on the
-#   bottom and left sides
-# Set the types of both axes to internal
+# Initialize a new canvas
+plot.new()
+
+# Reset the inner margins (in inches)
+# and change the axis types to "internal"
 par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.2),
+  mai = c(1.02, 0.82, 0.25, 0.25),
   xaxs = "i",
   yaxs = "i"
 )
 
-# Plot example data points
-plot(
-  x = c(0, 1),
-  xlab = "x",
-  y = c(0, 1),
-  ylab = "y"
+# Scale the canvas 
+plot.window(
+  xlim = c(xmin, xmax),
+  ylim = c(ymin, ymax)
+)
+
+# Add scales to the x and y axes
+axis(side = 1)
+axis(side = 2)
+
+# Draw a box around the plot region
+box()
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+The default determination of tick locations in this case may prevent a tick at 0 on both axes to avoid crowding of symbols.
+However, note that the 0 location on both x an y axes are at the same point, denoting that the corner of the plot region is now at (0, 0) with no buffering.
+
+`r indent()`
+The function `plot.window()` may be called several times on the same canvas.
+For example, we may need to call `plot.window()` for each plot region, if we have used changes to the margins to create more than one plot region on the same graph.
+Here the motivation might be to compare stacked figure with the same scaling on the x axes, but different scaling on the y axes.
+
+```{r coord_multipanelScaling}
+
+# Initialize a new canvas
+plot.new()
+
+# Reset the inner margins (in inches) 
+#   and rescale the coordinate system
+par(mai = c(2.5 + 1.02, 0.82, 0.25, 0.25))
+plot.window(
+  xlim = c(0, 10),
+  ylim = c(0, 5)
+)
+
+# Add scales to the x and y axes
+axis(side = 1)
+axis(side = 2)
+
+# Draw a box around the plot region
+box()
+
+# Reset the inner margins (in inches) 
+#   and rescale the coordinate system
+par(mai = c(1.02, 0.82, 2.5 + 0.25, 0.25))
+plot.window(
+  xlim = c(0, 10),
+  ylim = c(0, 100)
+)
+
+# Add scales to the x and y axes
+axis(side = 1)
+axis(side = 2)
+
+# Draw a box around the plot region
+box()
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+`r indent()`
+We may also need to reestablish a new coordinate system based on the same plot region (i.e., without changing margins), if we want to put data on the same graph but with a very different secondary y axis scale on the right side of the plot region.
+Also, there are no rules that say that the coordinate system has to increase in value from left to right or from bottom to top.
+Inverting plots in base R is accomplished by reversing the scale for the associated axis in the coordinate system.
+In the following example, let's rescale the plot region designed for the chemical reaction data and create a corresponding y axis on the right side to reflect an inverted scale from 0 at the top to 100 at the bottom.
+We'll keep the same x axis scaling for both coordinate systems, as is common practice when scaling data sets at multiple scales on the same axes.
+Therefore, there is no need to render the symbols for the x axis scaling more than once.
+Note that the margins have been changed here to make room for the ticks and tick labels for the secondary y axis the right side.
+
+```{r coord_secondAxisScaling}
+
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
+
+# Determine the limits of the data
+xmin <- min(react$t)
+xmax <- max(react$t)
+ymin <- min(react$C)
+ymax <- max(react$C)
+
+# Initialize a new canvas
+plot.new()
+
+# Reset the inner margins (in inches)
+par(mai = c(1.02, 0.82, 0.25, 0.82))
+
+# Scale the canvas for the left y axis
+plot.window(
+  xlim = c(xmin, xmax),
+  ylim = c(ymin, ymax)
+)
+
+# Add scales to the x and left y axes
+axis(side = 1)
+axis(side = 2)
+
+# Draw a box around the plot region
+box()
+
+# Scale the canvas for the right y axis
+plot.window(
+  xlim = c(xmin, xmax),
+  ylim = c(100, 0)
+)
+
+# Add scales to the right y axis
+axis(side = 4)
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+
+```{r include = FALSE}
+sec2 <- sec2 + 1
+
+hn <- paste0(sec1, ".", sec2)
+```
+## `r hn`. Plotting the data
+
+`r indent()`
+Once a coordinate system is defined, graphical symbols can now be added to the canvas in as many layers as desired.
+Lower layers will still be visible, unless opaque elements are added on top of them.
+The `plot.default()` function uses the function `plot.xy()` to add symbols representing data to the plot region. 
+The first argument `xy` to the function `plot.xy()` is expected to be a list of vectors characterizing the coordinates to be plotted.
+This list can be conveniently constructed using the `xy.coords()` function with arguments specifying equal-length vectors of x and y coordinates, where the length corresponds to the number of data points to be plotted.
+
+```{r plotdata_plotxy}
+
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
+
+# Determine the limits of the data
+xmin <- min(react$t)
+xmax <- max(react$t)
+ymin <- min(react$C)
+ymax <- max(react$C)
+
+# Initialize a new canvas
+plot.new()
+
+# Reset the inner margins (in inches)
+par(mai = c(1.02, 0.82, 0.25, 0.25))
+
+# Scale the canvas 
+plot.window(
+  xlim = c(xmin, xmax),
+  ylim = c(ymin, ymax)
+)
+
+# Add scales to the x and y axes
+axis(side = 1)
+axis(side = 2)
+
+# Draw a box around the plot region
+box()
+
+# Plot the reactant data
+xyreact <- xy.coords(x = react$t, y = react$C)
+plot.xy(xy = xyreact, type = "p")
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+*Functions and arguments being used for the first time*
+
+- `xy.coords()`: Creates a coordinate list for a bivariate data set to be plotted
+    - `x`: Numerical vector of values for the x coordinate of each data point graphed
+        - `react$t`: Data points are plotted on the x axis at the times of measurements of the reactant concentrations
+    - `y`: Numerical vector of values for the y coordinate of each data point graphed
+        - `react$C`: Data points are plotted on the y axis at the concentrations corresponding to the measurement times
+- `plot.xy()`: Renders the symbols corresponding to a bivariate scatter plot on the canvas
+    - `xy`: A coordinate list specifying information about the x and y coordinates for a set of data to be plotted.
+        - `xyreact`: The object returned by a call to `xy.coords()` to define the x and y plotting data for the chemical reaction experiment
+    - `type`: The character string code for the type of scatter plot to render
+        - `"p"`: Results in data being plotted as point symbols in the scatter plot
+
+`r indent()`
+The `plot.xy()` function offers substantial flexibility in the symbols used to reflect the values of the data.
+The argument `type` controls whether data are represented by point symbols, line symbols connecting data, or a combination of both (see `help("plot.default")` for details).
+The key characteristics of `col`,`lwd`, `pch`, `cex`, `lty`, and `lwd` are both global graphics parameters and arguments to `plot.xy()`.
+Changing the global graphics parameter value will change the default value used if a corresponding argument to a graphics function is not specified.
+However, a specified argument to a graphics function function will typically override the global parameter value.
+Changing the global graphics parameter may change the character of more symbols than just those used to represent the data.
+
+For a brief description  (see `help("par")` for details):
+- The `col` parameter or argument changes the color of the point or line symbols.
+- The `lwd` parameter or argument changes the width of the lines in the point or line symbols.
+- The `pch` parameter or argument changes the type of point symbol used (circles, squares, triangle, etc.).
+- The `cex` parameter or argument changes the size of the point symbol used, as a factor of the default point size.
+- The `lty` parameter changes the type of line symbol used (dotted, dashed, etc.).
+
+These are the characteristics of symbols you are likely to want to change most often, but this list is not exhaustive. Also, we are leaving for later discussion the fact that these parameters or arguments can all be vectors of multiple values rather than individual values.
+
+`r indent()`
+Demonstrating these characteristics individually is outside the scope of this tutorial and experimentation is probably a better way to develop understanding of these controls.
+Here is an example where all of these symbol characteristics discussed have been altered either as global graphics parameters or arguments to `plot.xy()`.
+Note that the value returned by `xy.coords()` is being passed directly to the `xy` argument of `plot.xy()`, eliminating the need to define another variable. 
+You are encouraged to experiment to convince yourself you understand the consequences of altering these symbol characteristics at either the global level or as arguments to specific graphing functions.
+
+```{r plotdata_style}
+
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
+
+# Determine the limits of the data
+xmin <- min(react$t)
+xmax <- max(react$t)
+ymin <- min(react$C)
+ymax <- max(react$C)
+
+# Initialize a new canvas
+plot.new()
+
+# Reset the inner margins (in inches)
+# and change the default point symbol
+par(
+  mai = c(1.02, 0.82, 0.25, 0.25),
+  pch = 3
+)
+
+# Scale the canvas 
+plot.window(
+  xlim = c(xmin, xmax),
+  ylim = c(ymin, ymax)
+)
+
+# Add scales to the x and y axes
+axis(side = 1)
+axis(side = 2)
+
+# Draw a box around the plot region
+box()
+
+# Plot the reactant data
+plot.xy(
+  xy = xy.coords(x = react$t, y = react$C), 
+  type = "b",
+  col = "darkorange",
+  lwd = 2,
+  cex = 0.5,
+  lty = "dotted"
 )
 
 # Draw a box around the outer edge of the canvas
@@ -1100,25 +1335,39 @@ box(which = "outer")
 
 ```
 
-Values for the ` xaxs` and ` yaxs ` arguments can also be passed generically to the ` plot() ` function, which will ultimately pass them on to ` plot.window() ` to achieve the same result. However, this technique will not change the default graphical parameter values, so the effects of using these arguments would not propagate to other graphs created later on the same device.
+`r indent()`
+Perhaps this is a good time to revisit the higher level functions.
+The previous example does not actually require the granularity of lower level functions we are using.
+Here is an example of the same figure generated by a call to `plot()`.
+Again, several lines of code can be removed because the decisions we have made about the coordinate system and axes are identical to the assumptions made by `plot()`.
+This time, we don't need any new functions or arguments that we have not already used.
 
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+```{r plotdata_usePlot}
 
-# Define margins leaving room for axes on the
-#   bottom and left sides
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
+
+# Reset the inner margins (in inches)
+# and change the default point symbol
 par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.2)
+  mai = c(1.02, 0.82, 0.25, 0.25),
+  pch = 3
 )
 
-# Plot example data points
+# Create the canvas, define the coordinate system,
+#   plot the reactant data, suppress default axis labels,
+#   and change the default symbol characteristics
 plot(
-  x = c(0, 1),
-  xlab = "x",
-  xaxs = "i",
-  y = c(0, 1),
-  ylab = "y",
-  yaxs = "i"
+  x = react$t,
+  xlab = "",
+  y = react$C,
+  ylab = "",
+  type = "b",
+  col = "darkorange",
+  lwd = 2,
+  cex = 0.5,
+  lty = "dotted"
 )
 
 # Draw a box around the outer edge of the canvas
@@ -1126,1050 +1375,568 @@ box(which = "outer")
 
 ```
 
-Note that without the buffering, the symbols on this graph are barely visible. Only a quarter of each circle symbol can be seen in the corners of the plot region. The full circles are actually there, the parts of them outside the plot region are just being clipped. This clipping is, yet again, controlled by a graphics parameter (i.e., ` xpd `).
+`r indent()`
+As noted earlier, we can add as many layers of data as needed.
+For example, we may want to visualize the concentration of a product of our hypothetical chemical reaction alongside the reactant.
+Let's say that the initial concentration of our product is $\mathrm{4 \ mmol \ L^{-1}}$ and stoichiometry dictates that the reaction requires two of the reactant compounds to generate one product compound.
+The code defining the concentration of our product (`react$P`) at any given time would be `4 + 0.5 * (5 - react$C)`.
+In other words, the amount of product created above the initial concentration would be half of the amount of the reactant consumed at any given time of measurement.
+
+```{r plotData_productCalc}
+
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
+react$P <- 4 + 0.5 * (5 - react$C)
+
+# Print a summary of the variable to standard output
+print(x = react)
+
+```
+
+We will also need to reintroduce direct calculation of our minima and maxima for the specification of `xlim` and `ylim` to be sure that the data from both our data sets will be visible in our plot region after creating the coordinate system.
+We can use an additional call to `plot.xy()` to layer the concentrations of the reaction product on top of the concentrations of the reactant created by the `plot()` function.
+The high level function is just using the low level functions to do its job, so mixing and matching high and low level tools is not a problem.
+
+```{r plotData_product}
+
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
+react$P <- 4 + 0.5 * (5 - react$C)
+
+# Determine the limits of the data
+xmin <- min(react$t)
+xmax <- max(react$t)
+ymin <- min(react$C, react$P)
+ymax <- max(react$C, react$P)
+
+# Reset the inner margins (in inches)
+par(mai = c(1.02, 0.82, 0.25, 0.25))
+
+# Create the canvas, define the coordinate system,
+#   plot the reactant data, and suppress default axis labels
+plot(
+  x = react$t,
+  xlim = c(xmin, xmax),
+  xlab = "",
+  y = react$C,
+  ylim = c(ymin, ymax),
+  ylab = ""
+)
+
+# Plot the product data
+plot.xy(
+  xy = xy.coords(x = react$t, y = react$P),
+  type = "p",
+  pch = 2,
+  col = "darkorange"
+)
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+`r indent()`
+We can also add layers after changes in the location of the plot region and rescaling of the coordinate system.
+Let's add the reactant and the product to separate plots, building on the example with multiple panels from resetting the margins.
+Many more convenient methods are available for creating gridded alignments of multi-panel plots.
+See `mfrow` or `mfcol` global graphics parameters for a simple example.
+However, none of these conveniences are more flexible and configurable than direct manipulation of the plot region and coordinate system.
+
+```{r plotData_multipanel}
+
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
+react$P <- 4 + 0.5 * (5 - react$C)
+
+# Initialize a new canvas
+plot.new()
+
+# Determine the limits of the data
+xmin <- min(react$t)
+xmax <- max(react$t)
+ymin <- min(react$C)
+ymax <- max(react$C)
+
+# Reset the inner margins (in inches) 
+#   and rescale the coordinate system
+par(mai = c(2.5 + 1.02, 0.82, 0.25, 0.25))
+plot.window(
+  xlim = c(xmin, xmax),
+  ylim = c(ymin, ymax)
+)
+
+# Add scales to the x and y axes
+axis(side = 1)
+axis(side = 2)
+
+# Draw a box around the plot region
+box()
+
+# Plot the reactant data
+plot.xy(
+  xy = xy.coords(x = react$t, y = react$C),
+  type = "p"
+)
+
+# Determine the limits of the data
+ymin <- min(react$P)
+ymax <- max(react$P)
+
+# Reset the inner margins (in inches) 
+#   and rescale the coordinate system
+par(mai = c(1.02, 0.82, 2.5 + 0.25, 0.25))
+plot.window(
+  xlim = c(xmin, xmax),
+  ylim = c(ymin, ymax)
+)
+
+# Add scales to the x and y axes
+axis(side = 1)
+axis(side = 2)
+
+# Draw a box around the plot region
+box()
+
+# Plot the product data
+plot.xy(
+  xy = xy.coords(x = react$t, y = react$P),
+  type = "p",
+  pch = 2,
+  col = "darkorange"
+)
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+
+```{r include = FALSE}
+sec2 <- sec2 + 1
+
+hn <- paste0(sec1, ".", sec2)
+```
+## `r hn`. Annotating a figure
+
+`r indent()`
+The `title()` function is a high level tool for labeling different parts of the graph with minimal information required.
+Provided the appropriate room is left by the margins, the `title()` function will add axis labels based on character strings or expressions passed to the `xlab` and `ylab` arguments.
+
+```{r labelGraph_title}
+
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
+
+# Determine the limits of the data
+xmin <- min(react$t)
+xmax <- max(react$t)
+ymin <- min(react$C)
+ymax <- max(react$C)
+
+# Initialize a new canvas
+plot.new()
+
+# Reset the inner margins (in inches)
+par(mai = c(1.02, 0.82, 0.25, 0.25))
+
+# Scale the canvas 
+plot.window(
+  xlim = c(xmin, xmax),
+  ylim = c(ymin, ymax)
+)
+
+# Add scales to the x and y axes
+axis(side = 1)
+axis(side = 2)
+
+# Draw a box around the plot region
+box()
+
+# Label the x and y axis
+title(xlab = "Time", ylab = "Concentration")
+
+# Plot the reactant data
+xyreact <- xy.coords(x = react$t, y = react$C)
+plot.xy(xy = xyreact, type = "p")
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+*Functions and arguments being used for the first time*
+
+- `title()`: Renders the labels on various elements of a graphing canvas
+    - `xlab`: A character string (or expression) specifying the label for the x axis
+        - `"Time"`: Results in the x axis being labeled with "Time"
+    - `ylab`: A character string (or expression) specifying the label for the y axis
+        - `"y"`: Results in the y axis being labeled with "Concentration"
+
+`r indent()`
+As a more flexible alternative to `title()`, the `mtext()` function is a lower level tool that provides a much more configurable method for adding labels to the margins of graphs (such as axes labels or tick labels).
+Use of the `mtext()` function here only requires specifying the side and the distance from the plot region for the location of the label.
+The `side` argument functions similarly to that of the `axis()` function, where 1, 2, 3, and 4 correspond to the bottom, left, top, and right sides of the plot region.
+The `line` argument specifies the distance from the plot region toward the edge of the canvas for the text.
+This value passed to the `line` argument should be in units of lines of text, the size of which is determined by the font size for text in the margins (similar to the lines units used for the `oma` or `mar` specification of margin size).
+
+```{r labelGraph_mtext}
+
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
+
+# Determine the limits of the data
+xmin <- min(react$t)
+xmax <- max(react$t)
+ymin <- min(react$C)
+ymax <- max(react$C)
+
+# Initialize a new canvas
+plot.new()
+
+# Reset the inner margins (in inches)
+par(mai = c(1.02, 0.82, 0.25, 0.25))
+
+# Scale the canvas 
+plot.window(
+  xlim = c(xmin, xmax),
+  ylim = c(ymin, ymax)
+)
+
+# Add scales and labels to the x and y axes
+axis(side = 1)
+mtext(text = "Time", side = 1, line = 2.5)
+axis(side = 2)
+mtext(text = "Concentration", side = 2, line = 2.5)
+
+# Draw a box around the plot region
+box()
+
+# Plot the reactant data
+xyreact <- xy.coords(x = react$t, y = react$C)
+plot.xy(xy = xyreact, type = "p")
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+*Functions and arguments being used for the first time*
+
+- `mtext()`: Renders text in the margins of a graph with orientation of the text depending on the side of placement
+    - `side`: An integer specifying the side of the plot region upon which to place the text (1 = bottom, 2 = left, 3 = top, 4 = right)
+        - `1` or `2`: Call with 1 creates the x axis label and call with 2 creates the y axis label
+    - `line`: Distance from the axis toward the edge of the canvas for the text, in units of lines. Lines are relative units depending on the font size of text in the margins.
+        - `2.5`: 2.5 times the margin text font size from the plot region toward the edge of the canvas
+
+`r indent()`
+The same graph can be accomplished using the higher level function `plot()`.
+However, a critical element of the axis labels is still missing.
+Whenever a numerical scale is provided on a graph, any applicable units must be specified for the numbers read from the graph to have any meaning.
+For proper annotation, we may want to put mathematical notation in text on the figure.
+For most labels, R will allow specification of the label as an expression rather than a character string.
+An expression is a bit of unresolved R code that is interpreted later.
+In this case it is interpreted by the rendering device in a mathematical formatting language specified by plotmath in `grDevices`.
+See `help("plotmath")` for detailed documentation.
+One key to understanding plotmath is that space characters have no influence. Space is created in the math using the "~" character, and breaks between terms without space are designated using the "\*" character.
+For example, if we want to use exponents of units in our label, the R expression created by `expression(Concentration ~ "(" * mmol ~ L^-1 * ")")` will be rendered in the figure as $\mathrm{Concentration \ (mmol \ L^{-1})}$.
+The language of plotmath takes some practice, but if you are diligent with separating every term with "~" and "*" characters, you will avoid the most common errors in compilation.
+Note that adding the exponent required a bit more space in the left margin (increased from 0.82 to 0.92 inches) to prevent the y axis heading from running off the edge of the canvas.
+
+```{r labelGraph_plot}
+
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
+
+# Reset the inner margins (in inches)
+par(mai = c(1.02, 0.92, 0.25, 0.25))
+
+# Create the canvas, define the coordinate system,
+#   plot the reactant data, and add axis labels
+plot(
+  x = react$t,
+  xlab = "Time (min)",
+  y = react$C,
+  ylab = expression(Concentration ~ "(" * mmol ~ L^-1 * ")")
+)
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+*Functions and arguments being used for the first time*
+
+- `expression()`: Create an unevaluated R expression from the raw code in the argument
+    - `...`: The function `expression()` accepts generic arguments without names, where the argument is accepted as unevaluated code
+        - `Concentration ~ "(" * mmol ~ L^-1 * ")"`: raw code that is passed to the rendering device for evaluation. In this case, the rendering device will interpret the expression in the `plotmath` formatting language for rendering with mathematical symbols (in this case, $\mathrm{Concentration \ (mmol \ L^{-1})}$).
+
+`r indent()`
+Adding arbitrary labels within the plot region is another common need in annotating a figure.
+The `text()` function allows text to be added to the canvas using a location defined in the coordinate system created by `plot.window()`.
+For example, we might want to add the equation for the curve to the figure above.
+The gives us an excuse to review a fancier example of a `plotmath` expression.
+The `adj` argument to `text` allows control of the justification of the text relative to the location we provide using x and y coordinates.
+In this case, passing the single value of zero is left justification, meaning the defined x and y coordinates will be centered on the left edge of the added text.
+The function `text()` is another S3 abstraction, so you might want to review `help("text.default")` for more detailed information about adding text with numerical coordinates.
+
+```{r labelGraph_equation}
+
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
+
+# Reset the inner margins (in inches)
+par(mai = c(1.02, 0.92, 0.25, 0.25))
+
+# Create the canvas, define the coordinate system,
+#   plot the reactant data, and add axis labels
+plot(
+  x = react$t,
+  xlab = "Time (min)",
+  y = react$C,
+  ylab = expression(Concentration ~ "(" * mmol ~ L^-1 * ")")
+)
+
+# Add the equation to the figure
+text(
+  x = 3,
+  y = 2,
+  labels = expression(italic(C == 5 * e^{-0.5 * t})),
+  adj = 0
+)
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+*Functions and arguments being used for the first time*
+
+- `text()` or `text.default()`: Add a text label based on the coordinate system established by `plot.window()`
+    - `x`: Position of the text relative to the x axis
+        -`3`: Hard coded to the value 3 on the x axis
+    - `y`: Position of the text relative to the y axis
+        -`2`: Hard coded to the value 3 on the y axis
+    - `labels`: Text or expression to be added as a label
+        - `expression(italic(C == 5 * e^{-0.5 * t}))`: An plotmath expression that will render as $C = 5 e^{-0.5 t}$
+    - `adj`: Justification of the text relative to the x and y coordinates provided
+
+`r indent()`
+A legend is often helpful to allow quick interpretation of the symbols on a plot, especially if multiple data sets are plotted together on the same axes.
+Let's practice adding a legend to the previous example with plots of both a reactant and product of our hypothetical chemical reaction.
+To make our future lives easier, we will first change the example to define the symbolism of our plots at the beginning of the code creating the figure.
+This practice will allow us to change the symbols used both in the plot and in the legend from a single location in the code.
+When computer programming, a generally healthy practice is to define a variable for a value needed more than once, rather than "hardcoding" that value by manually copying it multiple times through a program.
+"Hardcoding" the same value more than once creates headaches for any value that might need to be changed in the future, yet needs to stay consistent through a given execution of the program.
+When building plots for publication, the need to adjust the symbolism in revisions of a manuscript is extremely common, and we quickly benefit by making those changes easy to accomplish.
+
+`r indent()`
+The `legend()` function uses the coordinate system of the canvas to define a location for the legend, in addition to `xjust` and `yjust` arguments to determine the justification of the legend relative to that location.
+The central area on the right side of the plot region does not have any data, so let's put the legend there.
+We can use our `xmin` and `ymin` calculations to define a point in the middle of the right edge of the plot region.
+Then we can make sure the legend is placed to the left of that location in the x direction (`xjust = 1`) and centered in the y direction (`yjust = 0.5`).
+We can turn off the box around the legend with the `bty` argument.
+Finally, the text, symbols, and colors for the plots listed in the legend are defined with vectors passed to the `legend`, `pch`, and `col` arguments, respectively.
+
+```{r labelGraph_legend}
+
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
+react$P <- 4 + 0.5 * (5 - react$C)
+
+# Determine the limits of the data
+xmin <- min(react$t)
+xmax <- max(react$t)
+ymin <- min(react$C, react$P)
+ymax <- max(react$C, react$P)
+
+# Define the symbols and colors for the plots
+reactantSymbol <- 1
+reactantColor <- "black"
+productSymbol <- 2
+productColor <- "darkorange"
+
+# Reset the inner margins (in inches)
+par(mai = c(1.02, 0.92, 0.25, 0.25))
+
+# Create the canvas, define the coordinate system,
+#   plot the reactant data, add axis labels,
+#   and alter default symbol characteristics
+plot(
+  x = react$t,
+  xlim = c(xmin, xmax),
+  xlab = "Time (min)",
+  y = react$C,
+  ylim = c(ymin, ymax),
+  ylab = expression(Concentration ~ "(" * mmol ~ L^-1 * ")"),
+  pch = reactantSymbol,
+  col = reactantColor
+)
+
+# Plot the product data
+plot.xy(
+  xy = xy.coords(x = react$t, y = react$P),
+  type = "p",
+  pch = productSymbol,
+  col = productColor
+)
+
+# Add the equation to the figure
+text(
+  x = 3,
+  y = 2,
+  labels = expression(italic(C == 5 * e^{-0.5 * t})),
+  adj = 0,
+  col = reactantColor
+)
+
+# Add a legend
+legend(
+  x = xmax,
+  y = 0.5 * (ymax - ymin),
+  bty = "n",
+  xjust = 1,
+  yjust = 0.5,
+  legend = c("Reactant", "Product"),
+  pch = c(reactantSymbol, productSymbol),
+  col = c(reactantColor, productColor)
+)
+
+# Draw a box around the outer edge of the canvas
+box(which = "outer")
+
+```
+
+*Functions and arguments being used for the first time*
+
+- `legend()`: Add a legend to a graph at a location based on the coordinate system established by `plot.window()`
+    - `x`: Position of the text relative to the x axis
+        -`xmax`: Use the values calculated for `xlim` to put the legend on the right side of the plot region
+    - `y`: Position of the text relative to the y axis
+        -`0.5 * (ymax - ymin)`: Use the values calculated for `ylim` to put the legend halfway up the right side of the plot region
+    - `bty`: Type of box to use around the legend
+        - `"n"`: Do not put a box around the legend
+    - `xjust`: Justification of the legend relative to the x coordinate provided
+        - `1`: Places the legend fully to the left of the x coordinate provided
+    - `yjust`: Justification of the legend relative to the y coordinate provided
+        - `0.5`: Places the legend centered on the y coordinate provided
+    - `legend`: A vector of character strings for each label in the legend
+        - `c("Reactant", "Product")`: The labels correspond to the reactant and product concentrations
+    - `pch`: A vector of values designated the point symbols to show in the legend
+        - `c(reactantSymbol, productSymbol)`: A vector of values corresponding to the symbols for the reactant and product
+    - `col`: A vector of colors to show in the legend
+        - `c(reactantColor, productColor)`: A vector of colors corresponding to the symbols for the reactant and product
+
+`r indent()`
+The legend is sometimes better located outside the plot region, to be sure there is no chance of confusion or overlap with the plotted data.
+Recall that the coordinate system spreads over the whole canvas, not just within the plot region.
+Therefore, relocating the legend by changing the `x` and `xjust` argument to be outside the plot region on the right is no problem, remembering that we need to consider the 4% buffer space at the edge of the plot.
+We also need to remember to add space in the margin on the right to accommodate the width of the legend.
+
+`r indent()`
+One remaining change is critical to ensuring the legend will be visible.
+The `xpd` parameter or argument is usually set to `FALSE` by default, which results in anything plotted outside the x and y coordinates of the plotting region to be clipped. Here is the current setting for the default device in this Rmarkdown compiler.
 
 ```{r}
+
 par("xpd")
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` par() `: Allows the values of graphical parameters associated with the current open graphics device to be retrieved or altered.
-    - ` "xpd" `: Returns the current setting for the logical control on whether plot region symbols are rendered when located in the margins. A value of "TRUE" means that symbols in the margins will be visible. A value of "FALSE" means they will not.
-
-This graphics parameter can be altered to allow plot region symbols to be visible if plotted in the margins.
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Define margins leaving room for axes on the
-#   bottom and left sides
-# Allow rendering of plot region symbolism
-#   in the margins
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.2),
-  xpd = TRUE
-)
-
-# Plot example data points
-plot(
-  x = c(0, 1),
-  xlab = "x",
-  xaxs = "i",
-  y = c(0, 1),
-  ylab = "y",
-  yaxs = "i"
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
 
 ```
 
-As with axis types, a value for the ` xpd ` argument can be generically provided to ` plot() `. This generic argument is subsequently passed to ` plot.xy() `, which has the effect of disabling clipping for the generated plot. However, this does not change the default graphics parameter, so this approach would have no effect on future plotting on the same device.
+This feature is useful because you typically do not want any data outside of the plot region to clutter your margins.
+In other words, if you have configured your coordinate system to purposefully disregard data, you do not want the disregarded data to show up in your margins.
+Therefore, we need to override the default value for `xpd` and make sure it is set to `TRUE` when purposefully placing the legend in the margins.
+Many functions like `plot.xy()`, `text()`, and `legend()` are primarily designed to add symbols to the plot region, and the `xpd` parameter or argument will need to be set to `TRUE` if the symbols they generate outside the plot region need to be visible.
+Functions like `mtext()` are designed to add symbols in the margins and do not require this consideration.
+Let's remind ourselves of the details of plot construction by using only low level functions for this example.
 
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
+```{r labelGraph_legendMargin}
 
-# Define margins leaving room for axes on the
-#   bottom and left sides
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.2)
-)
+# Define chemical reaction data
+react <- data.frame(t = seq.default(from = 0, to = 10, by = 1))
+react$C <- 5 * exp(-0.5 * react$t)
+react$P <- 4 + 0.5 * (5 - react$C)
 
-# Plot example data points
-plot(
-  x = c(0, 1),
-  xlab = "x",
-  xaxs = "i",
-  y = c(0, 1),
-  ylab = "y",
-  yaxs = "i",
-  xpd = TRUE
-)
+# Determine the limits of the data
+xmin <- min(react$t)
+xmax <- max(react$t)
+ymin <- min(react$C, react$P)
+ymax <- max(react$C, react$P)
 
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
+# Define the symbols and colors for the plots
+reactantSymbol <- 1
+reactantColor <- "black"
+productSymbol <- 2
+productColor <- "darkorange"
 
-```
-
-While locating the symbols representing data outside the plot region is not typical, this exercise illustrates the effect of the ` xpd ` graphical parameter or argument, which is useful in common labeling tasks like placing legends outside the axes of plots.
-
-
-## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Summary of scaling a canvas for a single graph
-
-So far, we have been able to gain complete control of scaling while continuing to use the high-level abstract function ` plot() `, which ultimately calls ` plot.default() ` and passes generic arguments on to lower level graphing functions, such as ` plot.window() ` and ` plot.xy() `. Understanding the behavior of these examples comes from recognizing that the resulting plot is being generated by the following sequence of calls to lower level graphical functions. For example, the graph with a logarithmic x axis, with altered margins, without buffers, and with visible symbols in the margins can be properly scaled and created with lower level functions as follows.
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Define margins leaving room for axes on the
-#   bottom and left sides
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.2)
-)
+# Reset the inner margins (in inches)
+par(mai = c(1.02, 0.92, 0.25, 1.2))
 
 # Initialize a new canvas
 plot.new()
 
-# Scale the canvas 
+# Define the coordinate system
 plot.window(
-  xlim = c(0.1, 1),
-  xaxs = "i",
-  ylim = c(0, 1),
-  yaxs = "i",
-  log = "x"
+  xlim = c(xmin, xmax),
+  ylim = c(ymin, ymax)
 )
 
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-# Plot example data points
-plot.xy(
-  xy = xy.coords(
-    x = c(0.1, 1),
-    y = c(0, 1)
-  ),
-  type = "p",
-  xpd = TRUE
-)
-
-# Add an x axis
-Axis(side = 1)
-
-# Add a y axis
-Axis(side = 2)
+# Add scales to the x and y axes
+axis(side = 1)
+axis(side = 2)
 
 # Draw a box around the plot region
 box()
 
-# Add axis labels
+# Plot the reactant data
+plot.xy(
+  xy = xy.coords(x = react$t, y = react$C),
+  type = "p",
+  pch = reactantSymbol,
+  col = reactantColor
+)
+
+# Plot a product data
+plot.xy(
+  xy = xy.coords(x = react$t, y = react$P),
+  type = "p",
+  pch = productSymbol,
+  col = productColor
+)
+
+# Label the axes
 title(
-  xlab = "x",
-  ylab = "y"
+  xlab = "Time (min)",
+  ylab = expression(Concentration ~ "(" * mmol ~ L^-1 * ")")
 )
 
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` plot.window() `: Scales the canvas, providing an orthogonal 2-dimensional coordinate system (x is horizontal and y is vertical) for locating graphical objects placed on the canvas by later calls to graphing functions.
-    - ` xaxs ` or ` yaxs `: Character string specifying the type of scaling to use for the x or y axis
-        - ` "i" `: An "internal" axis does not include any buffering outside the minima and maxima of the values in the x and y vectors of coordinates
-    - ` log `: A character string specifying which axes should be in log space. The value "x" or "y" specifies one of the axes is in log space, and the value of "xy" specifies that both axes are in log space.
-        - ` "x" `: Specifies that the x axis should be scaled in log space
-- ` plot.xy() `: Renders the symbolism of a bivariate scatter plot on the canvas
-    - ` xpd `: A logical value indicating whether plot region symbolism located at canvas coordinates in the margins outside the plot region should be visible (` TRUE `) or clipped (` FALSE `)
-        - ` TRUE `: Results in the portions of the data symbols (circles) in the margins outside the plot region to be visible.
-        
-Just these few scaling features and recognition that the same canvas can be rescaled over and over again shows the way forward to more creative techniques, such as adding data to the plot region on a secondary y axis. Starting with the previous example, we can alter margins to make room for the secondary axis on the right, rescale the canvas using ` plot.window() `, plot the data using ` plot.xy() `, and add the secondary axis to the right side of the plot region using ` Axis() `, without the need to learn any new functions or arguments.
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Define margins leaving room for axes on the
-#   bottom, left, and right sides
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.9)
-)
-
-# Initialize a new canvas
-plot.new()
-
-# Scale the canvas 
-plot.window(
-  xlim = c(0.1, 1),
-  xaxs = "i",
-  ylim = c(0, 1),
-  yaxs = "i",
-  log = "x"
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-# Plot example data points
-plot.xy(
-  xy = xy.coords(
-    x = c(0.1, 1),
-    y = c(0, 1)
-  ),
-  type = "p",
-  xpd = TRUE
-)
-
-# Add an x axis
-Axis(side = 1)
-
-# Add a y axis
-Axis(side = 2)
-
-# Rescale the canvas for a secondary axis
-plot.window(
-  xlim = c(0.1, 1),
-  xaxs = "i",
-  ylim = c(10, 20),
-  yaxs = "i",
-  log = "x"
-)
-
-# Plot example data points using 
-#   the secondary scaling
-plot.xy(
-  xy = xy.coords(
-    x = c(0.15, 0.8),
-    y = c(11, 19)
-  ),
-  type = "p",
-  pch = 2
-)
-
-# Add the secondary y axis on the right side
-#   of the plot region
-Axis(side = 4)
-
-# Draw a box around the plot region
-box()
-
-# Add axis labels
-title(
-  xlab = "x",
-  ylab = "y"
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-While the functions necessary to add appropriate axis labels and legends to this graph have not yet been discussed, detailed understanding of just a few scaling controls and lower level graphing functions add tremendous potential for creativity and informed troubleshooting.
-
-The graphics parameters and graphical function arguments that control margins, limits on the plot region, and axis types together give complete control over canvas scaling. The ` xpd ` graphical parameter or graphical function argument allows subsequent control over whether plot region symbols are visible when they are placed at coordinates that are in the margins outside the plot region. 
-
-
-## `r sec1`.`r sec2 <- sec2 + 1; sec3 <- 0; sec2`. Scaling the canvas for a multi-panel graph
-
-A common need in data visualization is to align multiple graphs in a single figure to facilitate comparing patterns across different data sets relative to a common scale. Multiple graphs may also be grouped in the same figure simply because they have a common theme or represent a logical progression. Rendering multiple axes on a single device canvas is possible via several methods, depending on the flexibility needed for defining the size and location of each of the graphs. The ` mfrow ` or ` mfcol ` graphics parameter provide the simplest method, where the canvas inside the outer margins is divided evenly into a regularly spaced set of sub-canvases based on a user-defined number of rows and columns. The ` layout() ` function also creates a regularly spaced grid, but each sub-canvases can be arbitrarily assigned to take up any rectangular combination of those grid cells. This arbitrary assign creates a tremendous amount of flexibility in the size and shape of each graph in the figure. Finally, the most flexible method is to define the location of each graph manually by making repeated calls to the ` plot.window() ` function while varying the the location of the plot region with the ` mar ` or ` mai ` graphical parameters. This manual technique is less convenient in terms of the amount of code needed, but it is infinitely flexible regarding the size, shape, and location of each graph in the figure. Also, we have already covered all the graphics parameters, functions, and arguments necessary to create multi-panel graphs manually. The "simpler" methods require an understanding of additional graphing data structures and behavior.
-
-
-### `r sec1`.`r sec2`.`r sec3 <- sec3 + 1; sec3` Creating multiple panels of arbitrary sizes and locations
-
-Multiple panels can be created simply by recognizing that the plot region and scaling can be redefined repeatedly on the same canvas. The plot region can be moved by adjusting the ` mar ` or ` mai ` graphing parameter using ` par() ` function, and the scaling can be redefined by calling the ` plot.window() ` function with appropriate ` xlim ` and ` ylim ` arguments.
-
-Let's experiment by creating two vertically stacked plots. First, we set the canvas height to 6 inches using the following chunk options.
-
-` {r fig.width = 6, fig.height = 6, dev.args = list(pointsize = 12)} `
-
-To create a plot in the upper half of this canvas, the bottom margin must be 4 inches to leave 3 inches for the bottom graph and 1 inch of space for the tick and axis labels of the top graph. Similarly, the plot in the lower half of this canvas needs a top margin of 3.2 inches to leave 3 inches for the top graph and 0.2 inches to be consistent with the space left at the top of the top graph. Calculating the margins (which could be done systematically with R code) is probably the most complicated aspect of manually crating multi-panel plots. 
-
-```{r fig.width = 6, fig.height = 6, dev.args = list(pointsize = 12)}
-
-# Initialize a new canvas
-plot.new()
-
-# Define margins for the upper graph
-par(
-  mai = c(4.0, 1.0, 0.2, 0.2)
-)
-
-# Scale the canvas
-plot.window(
-  xlim = c(0.5, 1.5),
-  ylim = c(0.5, 1.5)
-)
-
-# Plot example data point
-plot.xy(
-  xy = xy.coords(
-    x = 1,
-    y = 1
-  ),
-  type = "p",
-  pch = "1"
-)
-
-# Draw axes and box around plot region
-Axis(side = 1)
-Axis(side = 2)
-box()
-
-# Label axes
-title(
-  xlab = "x",
-  ylab = "y"
-)
-
-# Define margins for the lower graph
-par(
-  mai = c(1.0, 1.0, 3.2, 0.2)
-)
-
-# Scale the canvas
-plot.window(
-  xlim = c(1.5, 2.5),
-  ylim = c(1.5, 2.5)
-)
-
-# Plot example data point
-plot.xy(
-  xy = xy.coords(
-    x = 2,
-    y = 2
-  ),
-  type = "p",
-  pch = "2"
-)
-
-# Draw axes and box around plot region
-Axis(side = 1)
-Axis(side = 2)
-box()
-
-# Label axes
-title(
-  xlab = "x",
-  ylab = "y"
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-Considering that the margins and scaling can be reset as many times as you wish as you add new graphs, your ability to organize multiple graphs on a canvas using this method is clearly only limited by your imagination.
-
-Some convenience may be provided by recognizing that the graphics parameter ` new ` can be used to tell the device to prevent calls to ` plot ` or ` plot.new() ` from automatically advancing to the next canvas. By default, the ` new ` parameter is set to ` FALSE `, which means that calls to ` plot.new() ` (whether direct or indirect) will tell the device to advance to the next canvas.
-
-```{r}
-par("new")
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` par() `: Allows the values of graphical parameters associated with the current open graphics device to be retrieved or altered. Calling ` par() ` with no arguments will provide the full list of available graphics parameters.
-    - ` "new" `: The graphics parameter that determines whether calls to ` plot.new() ` will advance the device to the next canvas. A value of ` FALSE ` will result in advancing to a new canvas the next time ` plot.new() ` is called. A value of ` TRUE ` will result in ignoring the next call to ` plot.new() ` and remaining on the same canvas.
-        
-The ability to set ` new ` to true in order to stay on the same canvas allows us to reproduce the previous example with substantially fewer lines of code.
-
-```{r fig.width = 6, fig.height = 6, dev.args = list(pointsize = 12)}
-
-# Define margins for upper graph
-par(
-  mai = c(4.0, 1.0, 0.2, 0.2)
-)
-
-# Plot example data point
-plot(
-  x = 1,
-  xlim = c(0.5, 1.5),
-  xlab = "x",
-  y = 1,
-  ylim = c(0.5, 1.5),
-  ylab = "y",
-  pch = "1"
-)
-
-# Define margins for lower graph
-# Ignore next call to plot.new()
-par(
-  mai = c(1.0, 1.0, 3.2, 0.2),
-  new = TRUE
-)
-
-# Plot example data point
-plot(
-  x = 2,
-  xlim = c(1.5, 2.5),
-  xlab = "x",
-  y = 2,
-  ylim = c(1.5, 2.5),
-  ylab = "y",
-  pch = "2"
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-While this method of organizing multiple graphs on the same canvas is not common, it basically has no limits in regards to defining the size and location of each graph (other than those imposed by the pixel resolution of your graphing device). That said, simpler methods are available if distributing graphs across the canvas evenly, though they require understanding of additional syntax and behavior.
-
-
-### `r sec1`.`r sec2`.`r sec3 <- sec3 + 1; sec3` Creating gridded panels using graphics parameters 
-
-The graphical parameters ` mfrow ` and ` mfcol ` both define a regular grid of sub-canvases within the outer margins based on a number of rows and columns. These parameters should be a numerical or integer vector with two values representing rows first and columns second (the same order in which matrices are indexed in R). These vectors will always have the same value. However, setting these vectors using ` mfrow ` will result in the rows of the grid being filled before the columns, and setting these vectors using ` mfcol ` will result in the columns being filled before the rows.
-
-By default, graphics parameters are configured with a single graph in mind. Therefore, the default vectors for ` mfrow ` and ` mfcol ` indicate one row and one column. 
-
-```{r}
-par("mfrow", "mfcol")
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` par() `: Allows the values of graphical parameters associated with the current open graphics device to be retrieved or altered. Calling ` par() ` with no arguments will provide the full list of available graphics parameters.
-    - ` "mfrow", "mfcol" `: The graphics parameter controlling how many rows and columns are in a grid of sub-canvases within the outer margins. These vectors will always have the same value. Creating the grid using ` mfrow ` will result in the default order of graphing to fill rows before columns. Creating the grid using ` mfcol ` will result in the default order of graphing to fill columns before rows.
-
-We can experiment with this method of creating sub-canvases by creating some graphs using an advancing numeric ` pch ` symbol to visualize the order of the rendering. Note that pch can use character strings as symbols. The grid of sub-canvases is created within the outer margins of the canvas, and we can experiment with the behavior of outer margins using the ` omi ` graphics parameter. Note that each time ` plot() ` is called, the new graph automatically advances to a new sub-canvas. This behavior is the result of the ` plot.default() ` function calling ` plot.new() `, which automatically advances the device to the next defined canvas or sub-canvas. If we set the rows and columns of the grid using ` mfrow `, then the rows will fill first.
-
-Note that the aspect ratio of the canvas is being adjusted in Rmarkdown using the chunk parameters.
-
-` {r fig.width = 6, fig.height = 8, dev.args = list(pointsize = 12)} `
-
-```{r fig.width = 6, fig.height = 8, dev.args = list(pointsize = 12)}
-
-# Divide space within outer margins into a grid
-#   of sub-canvases with 3 rows and 2 columns
-# Fill rows first
-# Define outer margins around sub-canvases and
-#   inner margins within each sub-canvas
-par(
-  mfrow = c(3, 2),
-  omi = c(0.5, 0.5, 0.5, 0.5),
-  mai = c(0.7, 0.7, 0.1, 0.1)
-)
-
-# Plot the first graph
-plot(
-  x = 1,
-  xlab = "x",
-  y = 1,
-  ylab = "y",
-  pch = "1"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the second graph
-plot(
-  x = 2,
-  xlab = "x",
-  y = 2,
-  ylab = "y",
-  pch = "2"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the third graph
-plot(
+# Add the equation to the figure
+text(
   x = 3,
-  xlab = "x",
-  y = 3,
-  ylab = "y",
-  pch = "3"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the fourth graph
-plot(
-  x = 4,
-  xlab = "x",
-  y = 4,
-  ylab = "y",
-  pch = "4"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the fifth graph
-plot(
-  x = 5,
-  xlab = "x",
-  y = 5,
-  ylab = "y",
-  pch = "5"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the sixth graph
-plot(
-  x = 6,
-  xlab = "x",
-  y = 6,
-  ylab = "y",
-  pch = "6"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-If we set the rows and columns of the grid using ` mfcol `, then the columns will fill first.
-
-```{r fig.width = 6, fig.height = 8, dev.args = list(pointsize = 12)}
-
-# Divide space within outer margins into a grid
-#   of sub-canvases with 3 rows and 2 columns
-# Fill columns first
-# Define outer margins around sub-canvases and
-#   inner margins within each sub-canvas
-par(
-  mfcol = c(3, 2),
-  omi = c(0.5, 0.5, 0.5, 0.5),
-  mai = c(0.7, 0.7, 0.1, 0.1)
-)
-
-# Plot the first graph
-plot(
-  x = 1,
-  xlab = "x",
-  y = 1,
-  ylab = "y",
-  pch = "1"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the second graph
-plot(
-  x = 2,
-  xlab = "x",
   y = 2,
-  ylab = "y",
-  pch = "2"
+  labels = expression(italic(C == 5 * e^{-0.5 * t})),
+  adj = 0,
+  col = reactantColor
 )
 
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the third graph
-plot(
-  x = 3,
-  xlab = "x",
-  y = 3,
-  ylab = "y",
-  pch = "3"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the fourth graph
-plot(
-  x = 4,
-  xlab = "x",
-  y = 4,
-  ylab = "y",
-  pch = "4"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the fifth graph
-plot(
-  x = 5,
-  xlab = "x",
-  y = 5,
-  ylab = "y",
-  pch = "5"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the sixth graph
-plot(
-  x = 6,
-  xlab = "x",
-  y = 6,
-  ylab = "y",
-  pch = "6"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-Note that each sub-canvas in the grid is treated just like a full canvas with outer margins set to zero. The inner margins here are kept consistent, as is commonly desired in multi-paneled graphs. However, nothing is preventing you from calling ` par() ` to change the inner margins within each sub-canvas to resize each plot region. Every graphing element within each sub-canvas can be uniquely controlled as if it were a regular canvas, except that sub-canvases do not have outer margins.
-
-The ` mfg ` graphics parameter keeps track of the grid cell to which graphics are currently being rendered. Let's assign the variable ` currentGridElement ` to the value value of ` mfg ` after plotting the first two graphs in the previous example.
-
-```{r fig.width = 6, fig.height = 8, dev.args = list(pointsize = 12)}
-
-# Define multi-panel grid and margins 
-par(
-  mfcol = c(3, 2),
-  omi = c(0.5, 0.5, 0.5, 0.5),
-  mai = c(0.7, 0.7, 0.1, 0.1)
-)
-
-# Plot the first graph
-plot(
-  x = 1,
-  xlab = "x",
-  y = 1,
-  ylab = "y",
-  pch = "1"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the second graph
-plot(
-  x = 2,
-  xlab = "x",
-  y = 2,
-  ylab = "y",
-  pch = "2"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Get the row and column of the current grid element
-currentGridElement <- par("mfg")
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-```{r}
-currentGridElement
-```
-
-The first two elements of this ` mfg ` vector indicate that graphics are currently being rendered in the grid element located at the second row and the first column. If present, the third and fourth elements of the ` mfg ` vector specify the total number of rows and columns in the grid, though these elements do not need to be provided when setting ` mfg `.
-
-Graphics elements can be added to any of the existing sub-canvases by setting the ` mfg ` graphics parameter to specify the appropriate grid element, including the sub-canvases that already have graphs. However, care should be taken that the scaling configuration is appropriate before adding elements to an existing graph. For example, we can plot a "4" at the coordinates x = 4, y = 4 in the sub-canvas in row three and column 1. To be sure the scaling is appropriate, we have to make sure that the current scaling configuration matches the scaling of the original graph. Recall that if the margins do not change, scaling is within our control by setting the ` xlim ` and ` ylim ` arguments when calling ` plot() ` or ` plot.window() `. Therefore, the scaling will be the same if the ` xlim ` and ` ylim ` arguments to ` plot() ` are the same (again, assuming the inner margins have not changed).
-
-```{r fig.width = 6, fig.height = 8, dev.args = list(pointsize = 12)}
-
-# Define multi-panel grid and margins 
-par(
-  mfcol = c(3, 2),
-  omi = c(0.5, 0.5, 0.5, 0.5),
-  mai = c(0.7, 0.7, 0.1, 0.1)
-)
-
-# Plot the first graph
-plot(
-  x = 1,
-  xlab = "x",
-  y = 1,
-  ylab = "y",
-  pch = "1"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the second graph
-plot(
-  x = 2,
-  xlab = "x",
-  y = 2,
-  ylab = "y",
-  pch = "2"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the third graph
-plot(
-  x = 3,
-  xlim = c(1.8, 4.2),
-  xlab = "x",
-  y = 3,
-  ylim = c(1.8, 4.2),
-  ylab = "y",
-  pch = "3"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the fourth graph
-plot(
-  x = 4,
-  xlab = "x",
-  y = 4,
-  ylab = "y",
-  pch = "4"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the fifth graph
-plot(
-  x = 5,
-  xlab = "x",
-  y = 5,
-  ylab = "y",
-  pch = "5"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the sixth graph
-plot(
-  x = 6,
-  xlab = "x",
-  y = 6,
-  ylab = "y",
-  pch = "6"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Define the next multi-panel grid element
-#   for rendering graphics elements
-par(mfg = c(3, 1))
-
-# Plot a graph with an additional
-#   example data point
-plot(
-  x = 4,
-  xlim = c(1.8, 4.2),
-  xlab = "x",
-  y = 4,
-  ylim = c(1.8, 4.2),
-  ylab = "y",
-  pch = "4"
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-Changing the value of ` mfg ` to a sub-canvas with an existing graph does not change the current values for the inner margins or the current scaling configuration. If the margins or scaling in the existing graph do not match those of the previous canvas (i.e. the value of ` mfg ` before being changed), then the ` mar ` or ` mai ` graphics parameter may need to be adjusted and the function ` plot.window() ` may need to be called with adjusted ` xlim ` and ` ylim ` arguments. To illustrate, let's remake the previous example using a call to ` plot.xy() `. In this case, we are using ` plot.xy() ` to place a "4" on the existing axes on the sub-canvas at the third row and first column, rather than using ` plot() ` to also completely remake the axes and labels. All the graphs have different scaling, so we need to return to the original scaling by calling ` plot.window() ` with matching ` xlim ` and ` ylim ` arguments. We do not need to reset the inner margins because all the graphs were originally created with the same plot region.
-
-```{r fig.width = 6, fig.height = 8, dev.args = list(pointsize = 12)}
-
-# Define multi-panel grid and margins 
-par(
-  mfcol = c(3, 2),
-  omi = c(0.5, 0.5, 0.5, 0.5),
-  mai = c(0.7, 0.7, 0.1, 0.1)
-)
-
-# Plot the first graph
-plot(
-  x = 1,
-  xlab = "x",
-  y = 1,
-  ylab = "y",
-  pch = "1"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the second graph
-plot(
-  x = 2,
-  xlab = "x",
-  y = 2,
-  ylab = "y",
-  pch = "2"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the third graph
-plot(
-  x = 3,
-  xlim = c(1.8, 4.2),
-  xlab = "x",
-  y = 3,
-  ylim = c(1.8, 4.2),
-  ylab = "y",
-  pch = "3"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the fourth graph
-plot(
-  x = 4,
-  xlab = "x",
-  y = 4,
-  ylab = "y",
-  pch = "4"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the fifth graph
-plot(
-  x = 5,
-  xlab = "x",
-  y = 5,
-  ylab = "y",
-  pch = "5"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Plot the sixth graph
-plot(
-  x = 6,
-  xlab = "x",
-  y = 6,
-  ylab = "y",
-  pch = "6"
-)
-
-# Draw a box around the sub-canvas
-box(which = "figure")
-
-# Define the next multi-panel grid element
-#   for rendering graphics elements
-par(mfg = c(3, 1))
-
-# Scale the canvas
-plot.window(
-  xlim = c(1.8, 4.2),
-  ylim = c(1.8, 4.2)
-)
-
-# Plot an additional example data point
-plot.xy(
-  xy = xy.coords(
-    x = 4,
-    y = 4
-  ),
-  type = "p",
-  pch = "4"
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-
-### `r sec1`.`r sec2`.`r sec3 <- sec3 + 1; sec3` Others?
-
-- ` layout() `
-- ` split.screen() `
-
-
-# `r sec1 <- sec1 + 1; sec2 <- 0; sec1`. Customizing axes
-
-High level functions like ` plot.default() ` provide few features for direct control over formatting the axes. One strategy is to disable the axes when calling ` plot() `, then call ` Axis() ` directly to make use of all the features inaccessible via ` plot.default() `. Note that ` Axis() ` is an S3 abstraction, such that the function it actually calls depends on the arguments ` x ` and ` at ` passed to ` Axis `. When plotting axes based on numeric vectors, the function actually called is ` axis() `. Note that R is case-sensitive, so ` Axis() ` is technically a different function than ` axis() ` (though they sometimes have the same result).
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Define margins 
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.2)
-)
-
-# Plot example data points without axes
-plot(
-  x = c(0, 1),
-  xlab = "x",
-  y = c(0, 1),
-  ylab = "y",
-  axes = FALSE
-)
-
-# Add an x axis
-axis(side = 1)
-
-# Add a y axis
-axis(side = 2)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` plot() ` or ` plot.default() `: A high level function for creating a new plot with a single line of code. The function ` plot() ` is an S3 abstraction, which in this case results in a call to ` plot.default() `.
-    - ` axes `: Logical value specifying if axes should be created
-        - ` FALSE `: Specifies that axes should not be drawn
-- ` axis() `: Renders the symbolism of an axis with labeled ticks
-    - ` side `: An integer specifying the side of the plot region upon which to place the axis (1 = bottom, 2 = left, 3 = top, 4 = right)
-        - ` 1 ` or ` 2 `: Call with 1 creates the x axis and call with 2 creates the y axis
-
-Notice that the ` axes = FALSE ` argument for ` plot() ` also results in the lack of a box drawn around the plot region. This feature is a consequence of the default value of the ` frame.plot ` argument being set to the same value as the ` axes ` argument (i.e., default value of ` frame.plot = axes ` specified in the arguments to ` plot.default() `.
-
-```{r}
-args(plot.default)
-```
-
-At this point, the convenience of using ` plot() ` may cause more confusion than it is worth. Perhaps customization at this level calls for more step-by-step code based on the dissection of ` plot.default() ` reviewed earlier.
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Define margins 
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.2)
-)
-
-# Initialize a new canvas and scale it
-plot.new()
-plot.window(
-  xlim = c(0, 1),
-  ylim = c(0, 1)
-)
-
-# Add axes
-axis(side = 1)
-axis(side = 2)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-The R base graphics package will often find an aesthetically pleasing style for the axes with default settings, but just a few arguments passed directly to the ` axis() ` function provide tremendous flexibility in formatting, including but not limited to: style and location of ticks and axis lines; style, location, and content of tick labels; and the location of axes relative to the plot region.
-
-
-## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Customizing tick locations
-
-The ` axis() ` function allows ticks to be located anywhere along the axes by passing a numeric vector of tick locations to the ` at ` argument. Therefore, any function that returns a numeric vector can be used to provide tick locations. Because aesthetically pleasing ticks are often at regular intervals, the ` seq() ` function is a good candidate for defining tick locations. However, use of the ` c() ` function to manually define the location of each tick is also possible. Regardless of the method used to create the vector for tick locations, an axis line is rendered from the first to the last tick specified. Note these axis lines are redundant and only the ticks and tick labels are a visible consequence of calls to ` axis() ` if a box is drawn around the plot region. For now, a box will not be drawn around the plot region to clearly observe the behavior of the ` axis() ` function.
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Define margins
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.2)
-)
-
-# Initialize a new canvas and scale it
-plot.new()
-plot.window(
-  xlim = c(0, 1),
-  ylim = c(0, 1)
-)
-
-# Add an x axis with custom ticks
-axis(
-  side = 1,
-  at = seq(from = 0.1, to = 0.9, by = 0.2)
-)
-
-# Add a y axis with custom ticks
-axis(
-  side = 2,
-  at = c(0, 0.15, 0.4, 0.55, 0.85, 1)
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` axis() `: Renders the symbolism of an axis with labeled ticks
-    - ` at `: A numeric vector specifying the locations of ticks
-        - ` seq(from = 0.1, to = 0.9, by = 0.2) `: Generates a vector with a sequence of values at regular intervals for tick locations
-        - ` c(0, 0.15, 0.4, 0.55, 0.85, 1) `: Generates a vector with directly specified values for tick locations
-- ` seq() `: Creates a vector based on regular sequence of values
-    - ` from `: A value for the beginning of the sequence
-        - ` 0.1 `: Start the numerical sequence at 0.1
-    - ` to `: A value for the end of the sequence
-        - ` 0.9 `: End the numerical sequence at a value less than or equal to 0.9
-    - ` by `: The interval between elements of the sequence
-        - ` 0.2 `: Elements of the sequence should increment by 0.2 from the value at the beginning of the sequence
-
-The ` axis() ` function will attempt to label the ticks based on the value specifying the tick location, if the formatting of the labels allow the labels to fit without overlap. Ticks will still be rendered where the labels do not fit, but the label will not be rendered. For example, several ticks are added to the y axis below, where only the lower-valued tick is labeled because the higher-valued tick is too close to allow a label to be rendered without overlap. The number of times the ` axis() ` function is called has no restrictions. The function might be called to draw attention to particular values of interest in a figure. For example, a tick is added at the value of 0.42 on the x axis below, to draw attention to and quantify this particular value on the graph. 
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Define margins
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.2)
-)
-
-# Initialize a new canvas and scale it
-plot.new()
-plot.window(
-  xlim = c(0, 1),
-  ylim = c(0, 1)
-)
-
-# Add an x axis with custom ticks
-axis(
-  side = 1,
-  at = seq(from = 0.1, to = 0.9, by = 0.2)
-)
-axis(
-  side = 1,
-  at = 0.42
-)
-
-# Add a y axis with custom ticks
-axis(
-  side = 2,
-  at = c(-0.18, 0, 0.15, 0.38, 0.4, 0.55, 0.65, 0.85, 0.88, 1)
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-The tick label for the x axis value at 0.42 fits on the axis based on the choice of the other tick labels. However, calling ` axis() ` (or any graphical rendering function) multiple times can create overlap of symbols, by design. Adjusting the location of tick labels to avoid overlap will be a later topic. Finally, the value of -0.18 was added as a tick location on the y axis. This tick is not visible because cropping outside the plot region applies to axes as it does to symbols representing data. In the case of an axis, cropping only applies to the boundaries of the plot region defined along that axis. In this case, the tick label at -0.18 is being cropped by the edge of the plot region specified by the buffer from y = 0. Setting the `xpd` argument to ` TRUE ` for the call to ` axis() ` will allow the cropped tick and associated axis line outside the plot region to be visible. 
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Define margins
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.2)
-)
-
-# Initialize a new canvas and scale it
-plot.new()
-plot.window(
-  xlim = c(0, 1),
-  ylim = c(0, 1)
-)
-
-# Add an x axis with custom ticks
-axis(
-  side = 1,
-  at = seq(from = 0.1, to = 0.9, by = 0.2)
-)
-axis(
-  side = 1,
-  at = 0.42
-)
-
-# Add a y axis with custom ticks
-axis(
-  side = 2,
-  at = c(-0.18, 0, 0.15, 0.38, 0.4, 0.55, 0.65, 0.85, 0.88, 1),
+# Add a legend
+legend(
+  x = xmax + 0.05 * (xmax - xmin),
+  y = 0.5 * (ymax - ymin),
+  bty = "n",
+  xjust = 0,
+  yjust = 0.5,
+  legend = c("Reactant", "Product"),
+  pch = c(reactantSymbol, productSymbol),
+  col = c(reactantColor, productColor),
   xpd = TRUE
 )
 
@@ -2178,112 +1945,17 @@ box(which = "outer")
 
 ```
 
-Description of functions and arguments being used for the first time:
+*Functions and arguments being used for the first time*
 
-- ` axis() `: Renders the symbolism of an axis with labeled ticks
-    - ` xpd `: A logical value indicating whether plot region symbolism located at canvas coordinates in the margins outside the plot region should be visible (` TRUE `) or clipped (` FALSE `)
-        - ` TRUE `: Results in the portions of the axis in the margins outside the plot region to be visible.
-
-The function ` axis() ` only provides a tool for labeling the existing coordinate system on the canvas. The location of the plot region and scaling of the canvas are unaffected by calls to ` axis() `. Additional axes rendered on a different scale or plot region within the canvas would first require another call to ` plot.window() `.
-
-
-## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Customizing tick labels
-
-The basic character of tick labels can be customized using arguments to the ` axis() ` function. Both the content and the location of ticks are adjustable from this function. Though only customizations with arguments to ` axis() ` are covered here, even more creativity with tick labels (e.g., partial rotation of text) is possible by suppressing the labeling of ticks by setting the ` labels ` argument to ` FALSE ` and labeling ticks manually using the ` text() ` function with the argument ` xpd ` set to ` TRUE `.
-
-If the locations of ticks are specified with the ` at ` argument, tick labels can also be defined explicitly with a vector of values passed to the ` labels ` argument. The length of the vectors for the ` at ` and ` labels ` arguments should be the same. As an example, values from 0 to 1 representing fractions of a whole might be visualized as the corresponding percentages by changing the tick labels without changing the original coordinate system based on fractions. 
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Define margins 
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 0.9, 0.2, 0.2)
-)
-
-# Initialize a new canvas and scale it
-plot.new()
-plot.window(
-  xlim = c(0, 1),
-  ylim = c(0, 1)
-)
-
-# Add an x axis with custom tick labels
-axis(
-  side = 1,
-  at = seq(from = 0, to = 1, by = 0.2),
-  labels = seq(from = 0, to = 100, by = 20)
-)
-
-# Add a y axis with custom tick labels
-axis(
-  side = 2,
-  at = seq(from = 0, to = 1, by = 0.2),
-  labels = c("0%", "20%", "40%", "60%", "80%", "100%")
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-Description of functions and arguments being used for the first time:
-
-- ` axis() `: Renders the symbolism of an axis with labeled ticks
-    - ` labels `: A vector of values specifying the labels for ticks. This argument can only be used if the locations of ticks are specified with the ` at ` argument, and the length of the vector of labels should match the length of the vector of tick locations.
-        - ` seq(from = 0, to = 100, by = 20) `: Results in numeric tick labels corresponding to 0, 20, 40, 60, 80, and 100 percent
-        - ` c("0%", "20%", "40%", "60%", "80%", "100%") `: Results in text tick labels corresponding to 0, 20, 40, 60, 80, and 100 percent, including the percent symbol
-        
-The automation of tick label generation is thus only limited by the imagination of how numerical or character vectors can be generated. However, the tick labels can always be hard coded to the exact symbolism desired with an explicitly defined vector of character strings. As with many of the labeling functions in R graphics, vectors of R expressions can also be used if mathematical notation is needed (see ` help(plotmath) `). Examples of using ` plotmath ` features are provided in later materials.
-
-
-## `r sec1`.`r sec2 <- sec2 + 1; sec2`. Customizing axis locations
-
-```{r fig.width = 6, fig.height = 5, dev.args = list(pointsize = 12)}
-
-# Define margins 
-par(
-  omi = c(0, 0, 0, 0),
-  mai = c(0.9, 1.8, 0.2, 0.2)
-)
-
-# Initialize a new canvas and scale it
-plot.new()
-plot.window(
-  xlim = c(0, 1),
-  ylim = c(0, 1)
-)
-
-# Add an x axis
-axis(
-  side = 1
-)
-
-# Add a y axis
-axis(
-  side = 2
-)
-
-# Plot example data points
-plot.window(
-  xlim = c(0, 2),
-  ylim = c(0, 2)
-)
-
-# Add a secondary y axis to the margin on the left
-#   edge of the plot region
-axis(
-  side = 2,
-  line = 4
-)
-
-# Draw a box around the outer edge of the canvas
-box(which = "outer")
-
-```
-
-
-# `r sec1 <- sec1 + 1; sec2 <- 0; sec1`. Plotting symbols representing data
-
-
-# `r sec1 <- sec1 + 1; sec2 <- 0; sec1`. Labeling the graph
+- `legend()`: Add a legend to a graph at a location based on the coordinate system established by `plot.window()`
+    - `x`: Position of the legend relative to the x axis
+        -`xmax + 0.05 * (xmax - xmin)`: Use the values calculated for `xlim` to put the legend just outside the right side of the plot region
+    - `y`: Position of the legend relative to the y axis
+        -`0.5 * (ymax - ymin)`: Use the values calculated for `ylim` to put the legend halfway up the right side of the plot region
+    - `xjust`: Justification of the legend relative to the x coordinate provided
+        - `0`: Places the legend fully to the right of the x coordinate provided
+    - `yjust`: Justification of the legend relative to the y coordinate provided
+        - `0.5`: Places the legend centered on the y coordinate provided
+    - `xpd` : Switch to disable rendering (`FALSE`, default value) or enable rendering (`TRUE`) of plot region graphics functions like `plot.xy`, `text`, or `legend` in the margins outside the plot region
+        - `TRUE`: Enable rendering in the margin so the legend outside the plot region is visible
+    

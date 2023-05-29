@@ -28,7 +28,7 @@ render(
   ),
   output_dir = "./04_product",
   output_file = wordFileName,
-  knit_root_dir = ".",
+  knit_root_dir = getwd(),
   intermediates_dir = "./03_incremental/temp/markdown/word"
 )
 
@@ -37,6 +37,6 @@ render(
   output_format = "html_document",
   output_dir = "./04_product",
   output_file = htmlFileName,
-  knit_root_dir = ".",
+  knit_root_dir = getwd(),
   intermediates_dir = "./03_incremental/temp/markdown/html"
 )
